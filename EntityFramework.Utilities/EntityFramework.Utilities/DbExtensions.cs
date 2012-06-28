@@ -20,32 +20,48 @@ namespace EntityFramework.Utilities
         public static void InsertAll<T>(this DbContext source, IEnumerable<T> items) where T : class
         {
 
+
             var context = (source as IObjectContextAdapter).ObjectContext;
-            var set = context.CreateObjectSet<T>();
-            var queryInformation = GetQueryInformation<T>(set);
-            var tables = context.MetadataWorkspace.GetItems<EntityType>(DataSpace.SSpace);
-            var first = tables.Single(t => t.Name == typeof(T).Name); //Use single to avoid any problems with multiple tables using the same type
-
-            var properties = first.Properties.Select(p => p.Name).ToList();
-
-            using (var reader = new EFDataReader<T>(items, properties))
+            var con = context.Connection as System.Data.EntityClient.EntityConnection;
+            if (con == null)
             {
-
-                using (SqlBulkCopy copy = new SqlBulkCopy(source.Database.Connection.ConnectionString, SqlBulkCopyOptions.Default))
-                {
-                    copy.BatchSize = reader.RecordsAffected;
-                    copy.DestinationTableName = queryInformation.Table;
-                    copy.NotifyAfter = 0;
-
-                    foreach (var i in Enumerable.Range(0, reader.FieldCount))
-                    {
-                        copy.ColumnMappings.Add(i, properties[i]);
-                    }
-                    copy.WriteToServer(reader);
-                    copy.Close();
-                }
+                Configuration.Log("No provider could be found because the Connection didn't implement System.Data.EntityClient.EntityConnection");
+                DefaultInsertAll(context, items);
             }
 
+            var provider = Configuration.Providers.FirstOrDefault(p => p.CanHandle(con.StoreConnection));
+            if (provider != null && provider.CanInsert)
+            {
+                var set = context.CreateObjectSet<T>();
+                var queryInformation = GetQueryInformation<T>(set);
+                var tables = context.MetadataWorkspace.GetItems<EntityType>(DataSpace.SSpace);
+                var first = tables.Single(t => t.Name == typeof(T).Name); //Use single to avoid any problems with multiple tables using the same type
+
+                var properties = first.Properties.Select(p => p.Name).ToList();
+
+                provider.InsertItems(items, queryInformation.Table, properties, con.StoreConnection);
+            }
+            else
+            {
+                DefaultInsertAll(context, items);
+            }
+
+        }
+
+        private static void DefaultInsertAll<T>(ObjectContext context, IEnumerable<T> items) where T : class
+        {
+            if (Configuration.DisableDefaultFallback)
+            {
+                throw new InvalidOperationException("No provider supporting the InsertAll operation for this datasource was found");
+            }
+            Configuration.Log("No provider found. Using default insert method");
+
+            var set = context.CreateObjectSet<T>();
+            foreach (var item in items)
+            {
+                set.AddObject(item);
+            }
+            context.SaveChanges();
         }
 
         /// <summary>

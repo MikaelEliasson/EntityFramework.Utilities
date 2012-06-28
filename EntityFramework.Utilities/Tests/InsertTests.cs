@@ -12,7 +12,7 @@ namespace Tests
         [TestMethod]
         public void InsertAll_InsertsItems()
         {
-            using (var db = new Context())
+            using (var db = Context.Sql())
             {
                 if (db.Database.Exists())
                 {
@@ -29,7 +29,7 @@ namespace Tests
                 db.InsertAll(list);
             }
 
-            using (var db = new Context())
+            using (var db = Context.Sql())
             {
                 Assert.AreEqual(3, db.BlogPosts.Count());
             }
@@ -47,7 +47,7 @@ namespace Tests
                 db.Database.Create();
             }
 
-            using (var db = new Context())
+            using (var db = Context.Sql())
             {
 
                 var list = new List<BlogPost>(){
@@ -59,10 +59,47 @@ namespace Tests
                 db.InsertAll(list);
             }
 
-            using (var db = new Context())
+            using (var db = Context.Sql())
             {
                 Assert.AreEqual(3, db.BlogPosts.Count());
             }
+        }
+
+        [TestMethod]
+        public void InsertAll_NoProvider_UsesDefaultInsert()
+        {
+            Configuration.Providers.Clear();
+            string fallbackText = null;
+
+            Configuration.Log = str => fallbackText = str;
+
+            using (var db = Context.SqlCe())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.Delete();
+                }
+                db.Database.Create();
+            }
+
+            using (var db = Context.SqlCe())
+            {
+
+                var list = new List<BlogPost>(){
+                    BlogPost.Create("T1"),
+                    BlogPost.Create("T2"),
+                    BlogPost.Create("T3")
+                };
+
+                db.InsertAll(list);
+            }
+
+            using (var db = Context.SqlCe())
+            {
+                Assert.AreEqual(3, db.BlogPosts.Count());
+            }
+
+            Assert.IsNotNull(fallbackText);
         }
     }
 }

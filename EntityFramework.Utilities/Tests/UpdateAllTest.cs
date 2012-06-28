@@ -15,13 +15,13 @@ namespace Tests
           SetupBasePosts();
 
           int count;
-          using (var db = new Context())
+          using (var db = Context.Sql())
           {
               count =db.UpdateAll<BlogPost>(b => b.Title == "T2", b => b.Reads + 5);
               Assert.AreEqual(1, count);
           }
 
-          using (var db = new Context())
+          using (var db = Context.Sql())
           {
               var post = db.BlogPosts.First(p => p.Title == "T2");
               Assert.AreEqual(5, post.Reads);
@@ -34,13 +34,13 @@ namespace Tests
           SetupBasePosts();
 
           int count;
-          using (var db = new Context())
+          using (var db = Context.Sql())
           {
               count = db.UpdateAll<BlogPost>(b => b.Title == "T2", b => b.Title + ".0");
               Assert.AreEqual(1, count);
           }
 
-          using (var db = new Context())
+          using (var db = Context.Sql())
           {
               var post = db.BlogPosts.First(p => p.Title == "T2.0");
           }
@@ -52,13 +52,13 @@ namespace Tests
           SetupBasePosts();
 
           int count;
-          using (var db = new Context())
+          using (var db = Context.Sql())
           {
               count = db.UpdateAll<BlogPost>(b => b.Title == "T2", b => b.Reads - 5);
               Assert.AreEqual(1, count);
           }
 
-          using (var db = new Context())
+          using (var db = Context.Sql())
           {
               var post = db.BlogPosts.First(p => p.Title == "T2");
               Assert.AreEqual(-5, post.Reads);
@@ -71,13 +71,13 @@ namespace Tests
           SetupBasePosts();
 
           int count;
-          using (var db = new Context())
+          using (var db = Context.Sql())
           {
               count = db.UpdateAll<BlogPost>(b => b.Title == "T1", b => b.Reads * 2);
               Assert.AreEqual(1, count);
           }
 
-          using (var db = new Context())
+          using (var db = Context.Sql())
           {
               var post = db.BlogPosts.First(p => p.Title == "T1");
               Assert.AreEqual(4, post.Reads);
@@ -90,13 +90,13 @@ namespace Tests
           SetupBasePosts();
 
           int count;
-          using (var db = new Context())
+          using (var db = Context.Sql())
           {
               count = db.UpdateAll<BlogPost>(b => b.Title == "T1", b => b.Reads / 2);
               Assert.AreEqual(1, count);
           }
 
-          using (var db = new Context())
+          using (var db = Context.Sql())
           {
               var post = db.BlogPosts.First(p => p.Title == "T1");
               Assert.AreEqual(1, post.Reads);
@@ -105,7 +105,7 @@ namespace Tests
 
       private static void SetupBasePosts()
       {
-          using (var db = new Context())
+          using (var db = Context.Sql())
           {
               if (db.Database.Exists())
               {

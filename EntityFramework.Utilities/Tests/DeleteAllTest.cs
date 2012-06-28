@@ -12,7 +12,7 @@ namespace Tests
         [TestMethod]
         public void DeleteAll_PropertyEquals_DeletesAllMatchesAndNothingElse()
         {
-            using (var db = new Context())
+            using (var db = Context.Sql())
             {
                 if (db.Database.Exists())
                 {
@@ -29,13 +29,13 @@ namespace Tests
             }
 
             int count;
-            using (var db = new Context())
+            using (var db = Context.Sql())
             {
                 count = db.DeleteAll<BlogPost>(b => b.Title == "T2");
                 Assert.AreEqual(2, count);
             }
 
-            using (var db = new Context())
+            using (var db = Context.Sql())
             {
                 var posts = db.BlogPosts.ToList();
                 Assert.AreEqual(2, posts.Count);
@@ -46,7 +46,7 @@ namespace Tests
         [TestMethod]
         public void DeleteAll_DateIsSmallerThan_DeletesAllMatchesAndNothingElse()
         {
-            using (var db = new Context())
+            using (var db = Context.Sql())
             {
                 if (db.Database.Exists())
                 {
@@ -62,14 +62,14 @@ namespace Tests
             }
 
             int count;
-            using (var db = new Context())
+            using (var db = Context.Sql())
             {
                 var limit = DateTime.Today;
                 count = db.DeleteAll<BlogPost>(b => b.Created < limit);
                 Assert.AreEqual(2, count);
             }
 
-            using (var db = new Context())
+            using (var db = Context.Sql())
             {
                 var posts = db.BlogPosts.ToList();
                 Assert.AreEqual(1, posts.Count);
@@ -81,7 +81,7 @@ namespace Tests
         [TestMethod]
         public void DeleteAll_DateIsInRange_DeletesAllMatchesAndNothingElse()
         {
-            using (var db = new Context())
+            using (var db = Context.Sql())
             {
                 if (db.Database.Exists())
                 {
@@ -97,7 +97,7 @@ namespace Tests
             }
 
             int count;
-            using (var db = new Context())
+            using (var db = Context.Sql())
             {
                 var lower = DateTime.Today.AddDays(-1);
                 var upper = DateTime.Today.AddDays(1);
@@ -105,7 +105,7 @@ namespace Tests
                 Assert.AreEqual(1, count);
             }
 
-            using (var db = new Context())
+            using (var db = Context.Sql())
             {
                 var posts = db.BlogPosts.ToList();
                 Assert.AreEqual(2, posts.Count);
@@ -116,7 +116,7 @@ namespace Tests
         [TestMethod]
         public void DeleteAll_DateIsInRangeAndTitleEquals_DeletesAllMatchesAndNothingElse()
         {
-            using (var db = new Context())
+            using (var db = Context.Sql())
             {
                 if (db.Database.Exists())
                 {
@@ -133,7 +133,7 @@ namespace Tests
             }
 
             int count;
-            using (var db = new Context())
+            using (var db = Context.Sql())
             {
                 var lower = DateTime.Today.AddDays(-1);
                 var upper = DateTime.Today.AddDays(1);
@@ -141,7 +141,7 @@ namespace Tests
                 Assert.AreEqual(1, count);
             }
 
-            using (var db = new Context())
+            using (var db = Context.Sql())
             {
                 var posts = db.BlogPosts.ToList();
                 Assert.AreEqual(3, posts.Count);
