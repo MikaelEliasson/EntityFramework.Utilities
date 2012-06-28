@@ -42,7 +42,6 @@ namespace PerformanceTests
             {
                 using (var db = new Context())
                 {
-
                     db.DeleteAll<BlogPost>(p => p.Created > limit);
                 }
             }, 1);

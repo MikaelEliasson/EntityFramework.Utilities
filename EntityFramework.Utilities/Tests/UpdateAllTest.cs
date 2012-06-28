@@ -17,7 +17,7 @@ namespace Tests
           int count;
           using (var db = new Context())
           {
-              count = 1; db.UpdateAll<BlogPost>(b => b.Title == "T2", b => b.Reads + 5);
+              count =db.UpdateAll<BlogPost>(b => b.Title == "T2", b => b.Reads + 5);
               Assert.AreEqual(1, count);
           }
 
@@ -36,7 +36,7 @@ namespace Tests
           int count;
           using (var db = new Context())
           {
-              count = 1; db.UpdateAll<BlogPost>(b => b.Title == "T2", b => b.Title + ".0");
+              count = db.UpdateAll<BlogPost>(b => b.Title == "T2", b => b.Title + ".0");
               Assert.AreEqual(1, count);
           }
 
@@ -54,7 +54,7 @@ namespace Tests
           int count;
           using (var db = new Context())
           {
-              count = 1; db.UpdateAll<BlogPost>(b => b.Title == "T2", b => b.Reads - 5);
+              count = db.UpdateAll<BlogPost>(b => b.Title == "T2", b => b.Reads - 5);
               Assert.AreEqual(1, count);
           }
 
@@ -73,7 +73,7 @@ namespace Tests
           int count;
           using (var db = new Context())
           {
-              count = 1; db.UpdateAll<BlogPost>(b => b.Title == "T1", b => b.Reads * 2);
+              count = db.UpdateAll<BlogPost>(b => b.Title == "T1", b => b.Reads * 2);
               Assert.AreEqual(1, count);
           }
 
@@ -92,7 +92,7 @@ namespace Tests
           int count;
           using (var db = new Context())
           {
-              count = 1; db.UpdateAll<BlogPost>(b => b.Title == "T1", b => b.Reads / 2);
+              count = db.UpdateAll<BlogPost>(b => b.Title == "T1", b => b.Reads / 2);
               Assert.AreEqual(1, count);
           }
 

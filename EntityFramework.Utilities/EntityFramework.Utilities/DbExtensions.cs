@@ -39,7 +39,7 @@ namespace EntityFramework.Utilities
 
                     foreach (var i in Enumerable.Range(0, reader.FieldCount))
                     {
-                        copy.ColumnMappings.Add(i, i);
+                        copy.ColumnMappings.Add(i, properties[i]);
                     }
                     copy.WriteToServer(reader);
                     copy.Close();

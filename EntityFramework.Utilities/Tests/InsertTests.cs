@@ -34,5 +34,35 @@ namespace Tests
                 Assert.AreEqual(3, db.BlogPosts.Count());
             }
         }
+
+        [TestMethod]
+        public void InsertAll_WrongColumnOrder_InsertsItems()
+        {
+            using (var db = new ReorderedContext())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.Delete();
+                }
+                db.Database.Create();
+            }
+
+            using (var db = new Context())
+            {
+
+                var list = new List<BlogPost>(){
+                    BlogPost.Create("T1"),
+                    BlogPost.Create("T2"),
+                    BlogPost.Create("T3")
+                };
+
+                db.InsertAll(list);
+            }
+
+            using (var db = new Context())
+            {
+                Assert.AreEqual(3, db.BlogPosts.Count());
+            }
+        }
     }
 }

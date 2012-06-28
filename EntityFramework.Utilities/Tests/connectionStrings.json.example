@@ -1,0 +1,3 @@
+﻿{
+	"SqlServer" : "Data Source=Mikael-PC; Initial Catalog=BatchTests; Integrated Security=SSPI; MultipleActiveResultSets=True"
+}
