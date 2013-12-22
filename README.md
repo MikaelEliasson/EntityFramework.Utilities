@@ -4,7 +4,7 @@ EntityFramework.Utilities will provide some enhancements to the core Entity Fram
 
 ## Installing
 
-Nuget package https://www.nuget.org/packages/EFUtilities/ (Right now it doesn't work with EF6)
+Nuget package https://www.nuget.org/packages/EFUtilities/ (Right now it doesn't work with EF6 and only with code first. Both limitations should be easy to fix though)
 
 ## Examples
 
