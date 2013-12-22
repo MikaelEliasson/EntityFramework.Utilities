@@ -2,6 +2,10 @@
 
 EntityFramework.Utilities will provide some enhancements to the core Entity Framework that the EF team hasn't yet added for us. Suggestions are welcome! Pull requests are even more welcome:)
 
+## Installing
+
+Nuget package https://www.nuget.org/packages/EFUtilities/ (Right now it doesn't work with EF6)
+
 ## Examples
 
 ### DeleteAll
