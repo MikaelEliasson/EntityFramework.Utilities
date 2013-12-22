@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ColumnMapping.cs" />
     <Compile Include="Configuration.cs" />
     <Compile Include="DbExtensions.cs" />
     <Compile Include="EFDataReader.cs" />

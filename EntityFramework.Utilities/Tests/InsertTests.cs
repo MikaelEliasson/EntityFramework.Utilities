@@ -66,6 +66,38 @@ namespace Tests
         }
 
         [TestMethod]
+        public void InsertAll_WrongColumnOrderAndRenamedColumn_InsertsItems()
+        {
+            using (var db = new RenamedAndReorderedContext())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.Delete();
+                }
+                db.Database.Create();
+                db.Database.ExecuteSqlCommand("drop table dbo.RenamedAndReorderedBlogPosts;");
+                db.Database.ExecuteSqlCommand(RenamedAndReorderedBlogPost.CreateTableSql());
+            }
+
+            using (var db = new RenamedAndReorderedContext())
+            {
+
+                var list = new List<RenamedAndReorderedBlogPost>(){
+                    RenamedAndReorderedBlogPost.Create("T1"),
+                    RenamedAndReorderedBlogPost.Create("T2"),
+                    RenamedAndReorderedBlogPost.Create("T3")
+                };
+
+                db.InsertAll(list);
+            }
+
+            using (var db = new RenamedAndReorderedContext())
+            {
+                Assert.AreEqual(3, db.BlogPosts.Count());
+            }
+        }
+
+        [TestMethod]
         public void InsertAll_NoProvider_UsesDefaultInsert()
         {
             Configuration.Providers.Clear();

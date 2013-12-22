@@ -15,12 +15,12 @@ namespace EntityFramework.Utilities
         public IList<string> Properties { get; set; }
         public List<Func<T, object>> Accessors { get; set; }
 
-        public EFDataReader(IEnumerable<T> items, IEnumerable<string> properties)
+        public EFDataReader(IEnumerable<T> items, IEnumerable<ColumnMapping> properties)
         {
-            Properties = properties.ToList();
+            Properties = properties.Select(p => p.NameOnObject).ToList();
             Accessors = properties.Select(p =>
             {
-                PropertyInfo info = typeof(T).GetProperty(p);
+                PropertyInfo info = typeof(T).GetProperty(p.NameOnObject);
                 var method = typeof(EFDataReader<T>).GetMethod("MakeDelegate");
                 var generic = method.MakeGenericMethod(info.PropertyType);
                 var getter = (Func<T, object>)generic.Invoke(this, new object[] { info.GetGetMethod(true) }); 

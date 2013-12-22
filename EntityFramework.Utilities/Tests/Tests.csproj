@@ -66,6 +66,8 @@
     <Compile Include="DeleteAllTest.cs" />
     <Compile Include="FakeDomain\BlogPost.cs" />
     <Compile Include="FakeDomain\Context.cs" />
+    <Compile Include="FakeDomain\RenamedAndReorderedContext.cs" />
+    <Compile Include="FakeDomain\RenamedAndReorderedBlogPost.cs" />
     <Compile Include="FakeDomain\ReorderedContext.cs" />
     <Compile Include="FakeDomain\ReorderedBlogPost.cs" />
     <Compile Include="InsertTests.cs" />

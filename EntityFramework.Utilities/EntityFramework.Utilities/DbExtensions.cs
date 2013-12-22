@@ -34,10 +34,12 @@ namespace EntityFramework.Utilities
             {
                 var set = context.CreateObjectSet<T>();
                 var queryInformation = GetQueryInformation<T>(set);
-                var tables = context.MetadataWorkspace.GetItems<EntityType>(DataSpace.SSpace);
-                var first = tables.Single(t => t.Name == typeof(T).Name); //Use single to avoid any problems with multiple tables using the same type
+                var sSpaceTables = context.MetadataWorkspace.GetItems<EntityType>(DataSpace.SSpace);
+                var oSpaceTables = context.MetadataWorkspace.GetItems<EntityType>(DataSpace.OSpace);
+                var sfirst = sSpaceTables.Single(t => t.Name == typeof(T).Name); //Use single to avoid any problems with multiple tables using the same type
+                var ofirst = oSpaceTables.Single(t => t.Name == typeof(T).Name); //Use single to avoid any problems with multiple tables using the same type
 
-                var properties = first.Properties.Select(p => p.Name).ToList();
+                var properties = sfirst.Properties.Zip(ofirst.Properties, (s, o) => new ColumnMapping { NameInDatabase = s.Name, NameOnObject = o.Name }).ToList();
 
                 provider.InsertItems(items, queryInformation.Table, properties, con.StoreConnection);
             }

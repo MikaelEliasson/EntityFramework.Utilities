@@ -5,11 +5,15 @@ using System.Linq;
 using System.Text;
 using Tests.FakeDomain;
 using EntityFramework.Utilities;
+using Tests;
 
 namespace PerformanceTests
 {
     public class Program
     {
+
+        private const int iterations = 3;
+        private const int insertSize = 40000;
         /// <summary>
         /// Warning! Running these tests might take quite some time
         /// </summary>
@@ -17,14 +21,14 @@ namespace PerformanceTests
         static void Main(string[] args)
         {
             var limit = DateTime.Today.AddDays(-5000);
-            Console.WriteLine("Adding 10000 posts");
-            PerfTest(() => SetupPosts(), 1);
+            Console.WriteLine("Adding " + insertSize + " posts");
+            PerfTest(() => SetupPosts(), iterations);
 
 
             Console.WriteLine("Traditional Delete");
             PerfTest(() =>
             {
-                using (var db = new Context())
+                using (var db = Context.Sql())
                 {
                     foreach (var item in db.BlogPosts.Where(p => p.Created > limit))
                     {
@@ -32,37 +36,37 @@ namespace PerformanceTests
                     }
                     db.SaveChanges();
                 }
-            }, 1);
+            }, iterations);
 
-            Console.WriteLine("Adding 10000 posts");
-            PerfTest(() => SetupPosts(), 1);
-
-            Console.WriteLine("Batch Delete");
-            PerfTest(() =>
-            {
-                using (var db = new Context())
-                {
-                    db.DeleteAll<BlogPost>(p => p.Created > limit);
-                }
-            }, 1);
-
-            Console.WriteLine("Adding 10000 posts batch");
-            PerfTest(() => SetupPostsBatch(), 1);
+            Console.WriteLine("Adding " + insertSize + " posts");
+            PerfTest(() => SetupPosts(), iterations);
 
             Console.WriteLine("Batch Delete");
             PerfTest(() =>
             {
-                using (var db = new Context())
+                using (var db = Context.Sql())
+                {
+                    db.DeleteAll<BlogPost>(p => p.Created > limit);
+                }
+            }, iterations);
+
+            Console.WriteLine("Adding " + insertSize + " posts batch");
+            PerfTest(() => SetupPostsBatch(), iterations);
+
+            Console.WriteLine("Batch Delete");
+            PerfTest(() =>
+            {
+                using (var db = Context.Sql())
                 {
 
                     db.DeleteAll<BlogPost>(p => p.Created > limit);
                 }
-            }, 1);
+            }, iterations);
         }
 
         private static void SetupPosts()
         {
-            using (var db = new Context())
+            using (var db = Context.Sql())
             {
                 if (db.Database.Exists())
                 {
@@ -70,7 +74,7 @@ namespace PerformanceTests
                 }
                 db.Database.Create();
 
-                for (int i = 0; i < 10000; i++)
+                for (int i = 0; i < insertSize; i++)
                 {
                     var p = BlogPost.Create("T" + i, DateTime.Today.AddDays(i - 10000));
                     db.BlogPosts.Add(p);
@@ -84,10 +88,10 @@ namespace PerformanceTests
 
         private static void SetupPostsBatch()
         {
-            using (var db = new Context())
+            using (var db = Context.Sql())
             {
-                var list = new List<BlogPost>(10000);
-                for (int i = 0; i < 10000; i++)
+                var list = new List<BlogPost>(insertSize);
+                for (int i = 0; i < insertSize; i++)
                 {
                     var p = BlogPost.Create("T" + i, DateTime.Today.AddDays(i - 10000));
                     list.Add(p);

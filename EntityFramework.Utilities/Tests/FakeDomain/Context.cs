@@ -17,6 +17,12 @@ namespace Tests.FakeDomain
 
         public IDbSet<BlogPost> BlogPosts { get; set; }
 
+        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<BlogPost>().Property(x => x.Created);
+        }
+
         public static Context Sql()
         {
             Database.SetInitializer<Context>(null);

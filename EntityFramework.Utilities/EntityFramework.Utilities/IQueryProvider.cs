@@ -14,7 +14,7 @@ namespace EntityFramework.Utilities
 
         string GetDeleteQuery(string orginalSql);
         string GetUpdateQuery(string orginalSql, IEnumerable<UpdateSpec> propertiesToUpdate);
-        void InsertItems<T>(IEnumerable<T> items, string tableName, IList<string> properties, DbConnection storeConnection);
+        void InsertItems<T>(IEnumerable<T> items, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection);
 
         bool CanHandle(DbConnection storeConnection);
 

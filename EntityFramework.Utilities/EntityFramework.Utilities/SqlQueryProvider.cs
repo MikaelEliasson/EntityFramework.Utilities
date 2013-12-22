@@ -23,19 +23,19 @@ namespace EntityFramework.Utilities
             throw new NotImplementedException();
         }
 
-        public void InsertItems<T>(IEnumerable<T> items, string tableName, IList<string> properties, DbConnection storeConnection)
+        public void InsertItems<T>(IEnumerable<T> items, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection)
         {
             using (var reader = new EFDataReader<T>(items, properties))
             {
                 using (SqlBulkCopy copy = new SqlBulkCopy(storeConnection.ConnectionString, SqlBulkCopyOptions.Default))
                 {
-                    copy.BatchSize = reader.RecordsAffected;
+                    copy.BatchSize = Math.Min(reader.RecordsAffected, 5000); //default batch size
                     copy.DestinationTableName = tableName;
                     copy.NotifyAfter = 0;
 
                     foreach (var i in Enumerable.Range(0, reader.FieldCount))
                     {
-                        copy.ColumnMappings.Add(i, properties[i]);
+                        copy.ColumnMappings.Add(i, properties[i].NameInDatabase);
                     }
                     copy.WriteToServer(reader);
                     copy.Close();
