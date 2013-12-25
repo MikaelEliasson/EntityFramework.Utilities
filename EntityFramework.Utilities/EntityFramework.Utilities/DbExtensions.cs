@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.Entity.Core.EntityClient;
+using System.Data.Entity.Core.Metadata.Edm;
+using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Infrastructure;
-using System.Data.Metadata.Edm;
-using System.Data.Objects;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
@@ -22,7 +23,7 @@ namespace EntityFramework.Utilities
 
 
             var context = (source as IObjectContextAdapter).ObjectContext;
-            var con = context.Connection as System.Data.EntityClient.EntityConnection;
+            var con = context.Connection as EntityConnection;
             if (con == null)
             {
                 Configuration.Log("No provider could be found because the Connection didn't implement System.Data.EntityClient.EntityConnection");
