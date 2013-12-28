@@ -6,67 +6,131 @@ using System.Text;
 using Tests.FakeDomain;
 using EntityFramework.Utilities;
 using Tests;
+using System.Data.Entity;
 
 namespace PerformanceTests
 {
-    public class Program
+    class Program
     {
-
-        private const int iterations = 3;
-        private const int insertSize = 40000;
-        /// <summary>
-        /// Warning! Running these tests might take quite some time
-        /// </summary>
-        /// <param name="args"></param>
         static void Main(string[] args)
         {
-            var limit = DateTime.Today.AddDays(-5000);
-            Console.WriteLine("Adding " + insertSize + " posts");
-            PerfTest(() => SetupPosts(), iterations);
-
-
-            Console.WriteLine("Traditional Delete");
-            PerfTest(() =>
-            {
-                using (var db = Context.Sql())
-                {
-                    foreach (var item in db.BlogPosts.Where(p => p.Created > limit))
-                    {
-                        db.BlogPosts.Remove(item);
-                    }
-                    db.SaveChanges();
-                }
-            }, iterations);
-
-            Console.WriteLine("Adding " + insertSize + " posts");
-            PerfTest(() => SetupPosts(), iterations);
-
-            Console.WriteLine("Batch Delete");
-            PerfTest(() =>
-            {
-                using (var db = Context.Sql())
-                {
-                    db.DeleteAll<BlogPost>(p => p.Created > limit);
-                }
-            }, iterations);
-
-            Console.WriteLine("Adding " + insertSize + " posts batch");
-            PerfTest(() => SetupPostsBatch(), iterations);
-
-            Console.WriteLine("Batch Delete");
-            PerfTest(() =>
-            {
-                using (var db = Context.Sql())
-                {
-
-                    db.DeleteAll<BlogPost>(p => p.Created > limit);
-                }
-            }, iterations);
+            BatchIteration(25);
+            BatchIteration(25);
+            NormalIteration(25);
+            NormalIteration(25);
+            BatchIteration(2500);
+            NormalIteration(2500);
+            BatchIteration(25000);
+            NormalIteration(25000);
+            BatchIteration(50000);
+            //NormalIteration(50000);
+            BatchIteration(100000);
+            //NormalIteration(100000);
         }
 
-        private static void SetupPosts()
+
+        private static void NormalIteration(int count)
         {
-            using (var db = Context.Sql())
+            Console.WriteLine("Standard iteration with " + count + " entities");
+            CreateAndWarmUp();
+            var stop = new Stopwatch();
+
+            using (var db = new Context())
+            {
+                db.Configuration.AutoDetectChangesEnabled = false;
+                db.Configuration.ValidateOnSaveEnabled = false;
+                var comments = GetEntities(count).ToList();
+                stop.Start();
+                foreach (var comment in comments)
+                {
+                    db.Comments.Add(comment);
+                }
+                db.SaveChanges();
+                stop.Stop();
+                Console.WriteLine("Insert entities: " + stop.ElapsedMilliseconds + "ms");
+            }
+
+            using (var db = new Context())
+            {
+                db.Configuration.AutoDetectChangesEnabled = true;
+                db.Configuration.ValidateOnSaveEnabled = false;
+                stop.Restart();
+                var toUpdate = db.Comments.Where(c => c.Text == "a").ToList();
+                foreach (var item in toUpdate)
+                {
+                    item.Reads++;
+                }
+                db.SaveChanges();
+                Console.WriteLine("Update all entities with a: " + stop.ElapsedMilliseconds + "ms");
+            }
+
+            using (var db = new Context())
+            {
+                db.Configuration.AutoDetectChangesEnabled = false;
+                db.Configuration.ValidateOnSaveEnabled = false;
+                stop.Restart();
+                var toDelete = db.Comments.Where(c => c.Text == "a").ToList();
+                foreach (var item in toDelete)
+                {
+                    db.Comments.Remove(item);
+                }
+                db.SaveChanges();
+                stop.Stop();
+                Console.WriteLine("delete all entities with a: " + stop.ElapsedMilliseconds + "ms");
+            }
+
+            using (var db = new Context())
+            {
+                db.Configuration.AutoDetectChangesEnabled = false;
+                db.Configuration.ValidateOnSaveEnabled = false;
+                stop.Restart();
+                var all = db.Comments.ToList();
+                foreach (var item in all)
+                {
+                    db.Comments.Remove(item);
+                }
+                db.SaveChanges();
+                stop.Stop();
+                Console.WriteLine("delete all entities: " + stop.ElapsedMilliseconds + "ms");
+
+            }
+        }
+
+        private static void BatchIteration(int count)
+        {
+            Console.WriteLine("Batch iteration with " + count + " entities");
+            CreateAndWarmUp();
+            using (var db = new Context())
+            {
+
+                var stop = new Stopwatch();
+                var comments = GetEntities(count).ToList();                
+                stop.Start();
+                db.InsertAll(comments);
+                stop.Stop();
+                Console.WriteLine("Insert entities: " + stop.ElapsedMilliseconds + "ms");
+
+                stop.Restart();
+                db.UpdateAll<Comment>(x => x.Text == "a", x => x.Reads + 1);
+                stop.Stop();
+                Console.WriteLine("Update all entities with a: " + stop.ElapsedMilliseconds + "ms");
+
+                stop.Restart();
+                db.DeleteAll<Comment>(x => x.Text == "a");
+                stop.Stop();
+                Console.WriteLine("delete all entities with a: " + stop.ElapsedMilliseconds + "ms");
+
+                stop.Restart();
+                db.DeleteAll<Comment>(x => true);
+                stop.Stop();
+                Console.WriteLine("delete all entities: " + stop.ElapsedMilliseconds + "ms");
+
+            }
+        }
+
+        private static void CreateAndWarmUp()
+        {
+            using (var db = new Context())
             {
                 if (db.Database.Exists())
                 {
@@ -74,48 +138,41 @@ namespace PerformanceTests
                 }
                 db.Database.Create();
 
-                for (int i = 0; i < insertSize; i++)
-                {
-                    var p = BlogPost.Create("T" + i, DateTime.Today.AddDays(i - 10000));
-                    db.BlogPosts.Add(p);
-                }
-
-
-
+                //warmup
+                db.Comments.Add(new Comment { Date = DateTime.Now });
+                db.SaveChanges();
+                db.Comments.Remove(db.Comments.First());
                 db.SaveChanges();
             }
         }
 
-        private static void SetupPostsBatch()
+        private static IEnumerable<Comment> GetEntities(int count)
         {
-            using (var db = Context.Sql())
+            var comments = Enumerable.Repeat('a', count).Select((c, i) => new Comment
             {
-                var list = new List<BlogPost>(insertSize);
-                for (int i = 0; i < insertSize; i++)
-                {
-                    var p = BlogPost.Create("T" + i, DateTime.Today.AddDays(i - 10000));
-                    list.Add(p);
-                }
-                db.InsertAll(list);
-            }
+                Text = ((char)(c + (i % 25))).ToString(),
+                Date = DateTime.Now.AddDays(i),
+            });
+            return comments;
+        }
+    }
+
+    public class Context : DbContext
+    {
+        public Context()
+            : base("Data Source=./; Initial Catalog=EFUTest; Integrated Security=SSPI; MultipleActiveResultSets=True")
+        {
+
         }
 
-        private static void PerfTest(Action action, int iterations)
-        {
-            var watch = new Stopwatch();
-            for (int i = 0; i < iterations; i++)
-            {
-                watch.Reset();
-                watch.Start();
+        public IDbSet<Comment> Comments { get; set; }
+    }
 
-                action();
-
-                watch.Stop();
-                Console.WriteLine("Iteration {0} took {1} ms", i, watch.ElapsedMilliseconds);
-            }
-
-
-
-        }
+    public class Comment
+    {
+        public int Id { get; set; }
+        public string Text { get; set; }
+        public DateTime Date { get; set; }
+        public int Reads { get; set; }
     }
 }
