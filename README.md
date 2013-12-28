@@ -10,16 +10,16 @@ Right now it's mostly to targeted at EF on SQL server but adding providers shoul
 
 Here is a small extract from the performance section later in the document.
 
-Batch iteration with 25000 entities
-Insert entities: 281ms
-Update all entities with a: 163ms
-delete all entities with a: 18ms
-delete all entities: 107ms
-Standard iteration with 25000 entities
-Insert entities: 9601ms
-Update all entities with a: 457ms
-delete all entities with a: 250ms
-delete all entities: 5895ms
+               Batch iteration with 25000 entities
+               Insert entities: 281ms
+               Update all entities with a: 163ms
+               delete all entities with a: 18ms
+               delete all entities: 107ms
+               Standard iteration with 25000 entities
+               Insert entities: 9601ms
+               Update all entities with a: 457ms
+               delete all entities with a: 250ms
+               delete all entities: 5895ms
 
 
 ## Installing
@@ -118,43 +118,42 @@ The standard iteration is optimized in the sense that AutoDetectChangedEnabled =
 
 Here is a test run with EntitityFramework.Utilities on my laptop doing operations on a really simple object Comment(Text:string,Date:DateTime,Id:int,Reads:int)
 
-Batch iteration with 25 entities
-Insert entities: 23ms
-Update all entities with a: 4ms
-delete all entities with a: 2ms
-delete all entities: 1ms
-Standard iteration with 25 entities
-Insert entities: 12ms
-Update all entities with a: 6ms
-delete all entities with a: 3ms
-delete all entities: 7ms
-Batch iteration with 2500 entities
-Insert entities: 47ms
-Update all entities with a: 22ms
-delete all entities with a: 5ms
-delete all entities: 11ms
-Standard iteration with 2500 entities
-Insert entities: 905ms
-Update all entities with a: 46ms
-delete all entities with a: 22ms
-delete all entities: 552ms
-Batch iteration with 25000 entities
-Insert entities: 281ms
-Update all entities with a: 163ms
-delete all entities with a: 18ms
-delete all entities: 107ms
-Standard iteration with 25000 entities
-Insert entities: 9601ms
-Update all entities with a: 457ms
-delete all entities with a: 250ms
-delete all entities: 5895ms
-Batch iteration with 100000 entities
-Insert entities: 1048ms
-Update all entities with a: 442ms
-delete all entities with a: 60ms
-delete all entities: 292ms
+               Batch iteration with 25 entities
+               Insert entities: 23ms
+               Update all entities with a: 4ms
+               delete all entities with a: 2ms
+               delete all entities: 1ms
+               Standard iteration with 25 entities
+               Insert entities: 12ms
+               Update all entities with a: 6ms
+               delete all entities with a: 3ms
+               delete all entities: 7ms
+               Batch iteration with 2500 entities
+               Insert entities: 47ms
+               Update all entities with a: 22ms
+               delete all entities with a: 5ms
+               delete all entities: 11ms
+               Standard iteration with 2500 entities
+               Insert entities: 905ms
+               Update all entities with a: 46ms
+               delete all entities with a: 22ms
+               delete all entities: 552ms
+               Batch iteration with 25000 entities
+               Insert entities: 281ms
+               Update all entities with a: 163ms
+               delete all entities with a: 18ms
+               delete all entities: 107ms
+               Standard iteration with 25000 entities
+               Insert entities: 9601ms
+               Update all entities with a: 457ms
+               delete all entities with a: 250ms
+               delete all entities: 5895ms
+               Batch iteration with 100000 entities
+               Insert entities: 1048ms
+               Update all entities with a: 442ms
+               delete all entities with a: 60ms
+               delete all entities: 292ms
 
 
 This is on my ultrabook. Here I don't compare to anything so it's just to give you some overview about what to expect. Note that in the batchmode around 100k entities/sec are added when reaching larger datasets. 
 
-* Iteration 0 took 35 ms
