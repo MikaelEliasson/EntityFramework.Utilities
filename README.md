@@ -1,36 +1,26 @@
 ## The goal
 
+Performance! EF is quite fast in many cases nowdays but doing CUD over many entities is slooooow. This is a solution for that.  
+
 EntityFramework.Utilities provides some batch operations for using EF that the EF team hasn't yet added for us. Suggestions are welcome! Pull requests are even more welcome:)
 
-Right now it's mostly to targeted at EF on SQL server but adding providers should be simple. Core EF doesn't really scale well to many entities in a single context or doing operations on many items. Here is a test run with EntitityFramework.Utilities on my laptop doing operations on a really simple object Comment(Text:string,Date:DateTime,Id:int,Reads:int)
+Right now it's mostly to targeted at EF on SQL server but adding providers should be simple. 
 
-Batch iteration with 25 entities
-Insert entities: 50ms
-Update all entities with a: 46ms
-delete all entities with a: 4ms
-delete all entities: 6ms
-Batch iteration with 2500 entities
-Insert entities: 62ms
-Update all entities with a: 26ms
-delete all entities with a: 6ms
-delete all entities: 10ms
+###Example
+
+Here is a small extract from the performance section later in the document.
+
 Batch iteration with 25000 entities
-Insert entities: 362ms
-Update all entities with a: 170ms
-delete all entities with a: 14ms
-delete all entities: 98ms
-Batch iteration with 50000 entities
-Insert entities: 621ms
-Update all entities with a: 335ms
-delete all entities with a: 38ms
-delete all entities: 169ms
-Batch iteration with 1000000 entities
-Insert entities: 12671ms
-Update all entities with a: 1796ms
-delete all entities with a: 221ms
-delete all entities: 2921ms
+Insert entities: 281ms
+Update all entities with a: 163ms
+delete all entities with a: 18ms
+delete all entities: 107ms
+Standard iteration with 25000 entities
+Insert entities: 9601ms
+Update all entities with a: 457ms
+delete all entities with a: 250ms
+delete all entities: 5895ms
 
-This is on my ultrabook. Here I don't compare to anything so it's just to give you some overview about what to expext. 
 
 ## Installing
 
@@ -122,22 +112,49 @@ Right now only numbers and string manipulations are supported and the operators 
 
 
 ## Performance
-These methods are all about performance. Measuring performance should always be done in your context but some simple numbers might give you a hint:
+These methods are all about performance. Measuring performance should always be done in your context but some simple numbers might give you a hint.
 
-### EF without optimization (Automatic changetracking enabled)
-* Adding 10000 posts
-* Iteration 0 took 84026 ms
-* Traditional Delete
-* Iteration 0 took 29393 ms
+The standard iteration is optimized in the sense that AutoDetectChangedEnabled = false; It would not be reasonable to delete/insert 25000 entities otherwise.
 
-### EF with optimization (Automatic changetracking disabled)
-* Adding 10000 posts
-* Iteration 0 took 9965 ms
-* Traditional Delete
-* Iteration 0 took 2679 ms
+Here is a test run with EntitityFramework.Utilities on my laptop doing operations on a really simple object Comment(Text:string,Date:DateTime,Id:int,Reads:int)
 
-### InsertAll and DeleteAll
-* Adding 10000 posts batch
-* Iteration 0 took 281 ms
-* Batch Delete
+Batch iteration with 25 entities
+Insert entities: 23ms
+Update all entities with a: 4ms
+delete all entities with a: 2ms
+delete all entities: 1ms
+Standard iteration with 25 entities
+Insert entities: 12ms
+Update all entities with a: 6ms
+delete all entities with a: 3ms
+delete all entities: 7ms
+Batch iteration with 2500 entities
+Insert entities: 47ms
+Update all entities with a: 22ms
+delete all entities with a: 5ms
+delete all entities: 11ms
+Standard iteration with 2500 entities
+Insert entities: 905ms
+Update all entities with a: 46ms
+delete all entities with a: 22ms
+delete all entities: 552ms
+Batch iteration with 25000 entities
+Insert entities: 281ms
+Update all entities with a: 163ms
+delete all entities with a: 18ms
+delete all entities: 107ms
+Standard iteration with 25000 entities
+Insert entities: 9601ms
+Update all entities with a: 457ms
+delete all entities with a: 250ms
+delete all entities: 5895ms
+Batch iteration with 100000 entities
+Insert entities: 1048ms
+Update all entities with a: 442ms
+delete all entities with a: 60ms
+delete all entities: 292ms
+
+
+This is on my ultrabook. Here I don't compare to anything so it's just to give you some overview about what to expect. Note that in the batchmode around 100k entities/sec are added when reaching larger datasets. 
+
 * Iteration 0 took 35 ms
