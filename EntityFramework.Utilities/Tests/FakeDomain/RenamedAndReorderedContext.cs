@@ -13,13 +13,13 @@ namespace Tests.FakeDomain
             : base(ConnectionStringReader.ConnectionStrings.SqlServer)
         {
             Database.DefaultConnectionFactory = new SqlConnectionFactory("System.Data.SqlServer");
-            Database.SetInitializer(new CreateDatabaseIfNotExists<ReorderedContext>());
+            Database.SetInitializer(new CreateDatabaseIfNotExists<RenamedAndReorderedContext>());
             this.Configuration.ValidateOnSaveEnabled = false;
             this.Configuration.LazyLoadingEnabled = false;
             this.Configuration.ProxyCreationEnabled = false;
             this.Configuration.AutoDetectChangesEnabled = false;
         }
-        public IDbSet<RenamedAndReorderedBlogPost> BlogPosts { get; set; }
+        public DbSet<RenamedAndReorderedBlogPost> BlogPosts { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {

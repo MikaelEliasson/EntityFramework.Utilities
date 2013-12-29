@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Text;
 
@@ -11,6 +12,7 @@ namespace Tests.FakeDomain
         public ReorderedContext()
             : base(ConnectionStringReader.ConnectionStrings.SqlServer)
         {
+            Database.DefaultConnectionFactory = new SqlConnectionFactory("System.Data.SqlServer");
             Database.SetInitializer(new CreateDatabaseIfNotExists<ReorderedContext>());
             this.Configuration.ValidateOnSaveEnabled = false;
             this.Configuration.LazyLoadingEnabled = false;

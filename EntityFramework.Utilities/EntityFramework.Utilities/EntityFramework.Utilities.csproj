@@ -49,12 +49,15 @@
   <ItemGroup>
     <Compile Include="ColumnMapping.cs" />
     <Compile Include="Configuration.cs" />
-    <Compile Include="DbExtensions.cs" />
+    <Compile Include="EFBatchOperation.cs" />
     <Compile Include="EFDataReader.cs" />
+    <Compile Include="ExpressionHelper.cs" />
+    <Compile Include="Fallbacks.cs" />
     <Compile Include="IQueryProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QueryInformation.cs" />
     <Compile Include="SqlQueryProvider.cs" />
+    <Compile Include="SqlStringHelper.cs" />
     <Compile Include="UpdateSpec.cs" />
   </ItemGroup>
   <ItemGroup>

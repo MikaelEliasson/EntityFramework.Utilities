@@ -12,11 +12,13 @@ namespace EntityFramework.Utilities
         bool CanUpdate { get; }
         bool CanInsert { get; }
 
-        string GetDeleteQuery(string orginalSql);
-        string GetUpdateQuery(string orginalSql, IEnumerable<UpdateSpec> propertiesToUpdate);
+        string GetDeleteQuery(QueryInformation queryInformation);
+        string GetUpdateQuery(QueryInformation predicateQueryInfo, QueryInformation modificationQueryInfo);
         void InsertItems<T>(IEnumerable<T> items, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection);
 
         bool CanHandle(DbConnection storeConnection);
 
+
+        QueryInformation GetQueryInformation<T>(System.Data.Entity.Core.Objects.ObjectQuery<T> query);
     }
 }

@@ -106,22 +106,22 @@ namespace PerformanceTests
                 var stop = new Stopwatch();
                 var comments = GetEntities(count).ToList();                
                 stop.Start();
-                db.InsertAll(comments);
+                EFBatchOperation.For(db, db.Comments).InsertAll(comments);
                 stop.Stop();
                 Console.WriteLine("Insert entities: " + stop.ElapsedMilliseconds + "ms");
 
                 stop.Restart();
-                db.UpdateAll<Comment>(x => x.Text == "a", x => x.Reads + 1);
+                EFBatchOperation.For(db, db.Comments).Where(x => x.Text == "a").Update(x => x.Reads, x => x.Reads + 1);
                 stop.Stop();
                 Console.WriteLine("Update all entities with a: " + stop.ElapsedMilliseconds + "ms");
 
                 stop.Restart();
-                db.DeleteAll<Comment>(x => x.Text == "a");
+                EFBatchOperation.For(db, db.Comments).Where(x => x.Text == "a").Delete();
                 stop.Stop();
                 Console.WriteLine("delete all entities with a: " + stop.ElapsedMilliseconds + "ms");
 
                 stop.Restart();
-                db.DeleteAll<Comment>(x => true);
+                EFBatchOperation.For(db, db.Comments).Where(x => true).Delete();
                 stop.Stop();
                 Console.WriteLine("delete all entities: " + stop.ElapsedMilliseconds + "ms");
 
