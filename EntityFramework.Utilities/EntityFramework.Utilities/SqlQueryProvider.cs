@@ -29,7 +29,7 @@ namespace EntityFramework.Utilities
             {
                 using (SqlBulkCopy copy = new SqlBulkCopy(storeConnection.ConnectionString, SqlBulkCopyOptions.Default))
                 {
-                    copy.BatchSize = Math.Min(reader.RecordsAffected, 5000); //default batch size
+                    copy.BatchSize = Math.Min(reader.RecordsAffected, 15000); //default batch size
                     copy.DestinationTableName = tableName;
                     copy.NotifyAfter = 0;
 

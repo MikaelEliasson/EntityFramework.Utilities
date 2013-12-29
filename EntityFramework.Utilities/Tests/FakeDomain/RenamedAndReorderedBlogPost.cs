@@ -18,7 +18,7 @@ namespace Tests.FakeDomain
 	[ID] [int] IDENTITY(1,1) NOT NULL,
 	[Title] [nvarchar](max) NULL,
     [Created2] [datetime] NOT NULL,
-	[Reads] [int] NOT NULL,
+	[Reads2] [int] NOT NULL,
  CONSTRAINT [PK_BlogPosts] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
