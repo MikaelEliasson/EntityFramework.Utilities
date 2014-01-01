@@ -26,7 +26,7 @@ namespace Tests
                     BlogPost.Create("T3")
                 };
 
-                db.InsertAll(list);
+                EFBatchOperation.For(db, db.BlogPosts).InsertAll(list);
             }
 
             using (var db = Context.Sql())
@@ -56,7 +56,7 @@ namespace Tests
                     BlogPost.Create("T3")
                 };
 
-                db.InsertAll(list);
+                EFBatchOperation.For(db, db.BlogPosts).InsertAll(list);
             }
 
             using (var db = Context.Sql())
@@ -88,7 +88,7 @@ namespace Tests
                     RenamedAndReorderedBlogPost.Create("T3")
                 };
 
-                db.InsertAll(list);
+                EFBatchOperation.For(db, db.BlogPosts).InsertAll(list);
             }
 
             using (var db = new RenamedAndReorderedContext())
@@ -100,7 +100,6 @@ namespace Tests
         [TestMethod]
         public void InsertAll_NoProvider_UsesDefaultInsert()
         {
-            Configuration.Providers.Clear();
             string fallbackText = null;
 
             Configuration.Log = str => fallbackText = str;
@@ -123,7 +122,7 @@ namespace Tests
                     BlogPost.Create("T3")
                 };
 
-                db.InsertAll(list);
+                EFBatchOperation.For(db, db.BlogPosts).InsertAll(list);
             }
 
             using (var db = Context.SqlCe())

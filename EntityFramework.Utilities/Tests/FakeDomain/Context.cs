@@ -15,7 +15,7 @@ namespace Tests.FakeDomain
 
         }
 
-        public IDbSet<BlogPost> BlogPosts { get; set; }
+        public DbSet<BlogPost> BlogPosts { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
