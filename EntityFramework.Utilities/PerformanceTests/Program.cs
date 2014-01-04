@@ -139,7 +139,7 @@ namespace PerformanceTests
                 db.Database.Create();
 
                 //warmup
-                db.Comments.Add(new Comment { Date = DateTime.Now });
+                db.Comments.Add(new Comment { Date = DateTime.Now, Address = new Address() });
                 db.SaveChanges();
                 db.Comments.Remove(db.Comments.First());
                 db.SaveChanges();
@@ -152,6 +152,12 @@ namespace PerformanceTests
             {
                 Text = ((char)(c + (i % 25))).ToString(),
                 Date = DateTime.Now.AddDays(i),
+                Address = new Address
+                {
+                    Line1 = "Street",
+                    ZipCode = "12345",
+                    Town = "Town"
+                }
             });
             return comments;
         }
@@ -166,6 +172,13 @@ namespace PerformanceTests
         }
 
         public IDbSet<Comment> Comments { get; set; }
+
+        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.ComplexType<Address>();
+        }
     }
 
     public class Comment
@@ -174,5 +187,13 @@ namespace PerformanceTests
         public string Text { get; set; }
         public DateTime Date { get; set; }
         public int Reads { get; set; }
+        public Address Address { get; set; }
+    }
+
+    public class Address
+    {
+        public string Line1 { get; set; }
+        public string ZipCode { get; set; }
+        public string Town { get; set; }
     }
 }
