@@ -70,13 +70,7 @@ namespace EntityFramework.Utilities
                 var sfirst = sSpaceTables.Single(t => t.Name == typeof(T).Name); //Use single to avoid any problems with multiple tables using the same type
                 var ofirst = oSpaceTables.Single(t => t.Name == typeof(T).Name); //Use single to avoid any problems with multiple tables using the same type
 
-                var props = ofirst.Properties.SelectMany(p => {
-                    if (p.ComplexType != null)
-                    {
-                        return p.ComplexType.Properties.Select(x => p.Name + "." + x.Name);
-                    }
-                    return Enumerable.Repeat(p.Name, 1);
-                }).ToList();
+                var props = GetPropertiesFromObjectSpace(ofirst);
 
                 var properties = sfirst.Properties.Zip(props, (s, o) => new ColumnMapping { NameInDatabase = s.Name, NameOnObject = o }).ToList();
 
@@ -87,6 +81,19 @@ namespace EntityFramework.Utilities
                 Configuration.Log("Found provider: " + (provider == null ? "[]" : provider.GetType().Name) + " for " + con.StoreConnection.GetType().Name);
                 Fallbacks.DefaultInsertAll(context, items);
             }
+        }
+
+        private static List<string> GetPropertiesFromObjectSpace(EntityType objectType)
+        {
+            Func<string, string, string> combinePath = (name, path) => path == null ? name : path + "." + name;
+
+            Func<EdmProperty, string, IEnumerable<string>> recurse = null;
+            recurse = (prop, path) => prop.IsComplexType
+                ? prop.ComplexType.Properties.SelectMany(x => recurse(x, combinePath(prop.Name, path)))
+                : Enumerable.Repeat(combinePath(prop.Name, path), 1);
+
+            var props = objectType.Properties.SelectMany(p => recurse(p, null)).ToList();
+            return props;
         }
 
         public IEFBatchOperationFiltered<TContext, T> Where(Expression<Func<T, bool>> predicate)

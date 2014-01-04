@@ -22,7 +22,13 @@ namespace Tests.FakeDomain
                 Author = new AuthorInfo
                 {
                     Email = "m@m.com",
-                    Name = "name"
+                    Name = "name",
+                    Address = new Address
+                    {
+                        Line1 = "Street",
+                        Town = "Gothenburg",
+                        ZipCode = "41654"
+                    }
                 }
 
             };
@@ -37,7 +43,13 @@ namespace Tests.FakeDomain
                 Author = new AuthorInfo
                 {
                     Email = "m@m.com",
-                    Name = "name"
+                    Name = "name",
+                    Address = new Address
+                    {
+                        Line1 = "Street",
+                        Town = "Gothenburg",
+                        ZipCode = "41654"
+                    }
                 }
             };
         }
@@ -48,5 +60,13 @@ namespace Tests.FakeDomain
     {
         public string Name { get; set; }
         public string Email { get; set; }
+        public Address Address { get; set; }
+    }
+
+    public class Address
+    {
+        public string Line1 { get; set; }
+        public string ZipCode { get; set; }
+        public string Town { get; set; }
     }
 }

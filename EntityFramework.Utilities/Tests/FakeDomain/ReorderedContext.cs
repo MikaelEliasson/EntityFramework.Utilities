@@ -26,6 +26,8 @@ namespace Tests.FakeDomain
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<ReorderedBlogPost>().ToTable("BlogPosts");
             modelBuilder.ComplexType<AuthorInfo>();
+            modelBuilder.ComplexType<Address>();
+
         }
 
     }
