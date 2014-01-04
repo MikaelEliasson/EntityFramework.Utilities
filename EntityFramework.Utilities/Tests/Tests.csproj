@@ -73,6 +73,10 @@
   <ItemGroup>
     <Compile Include="ConnectionStringReader.cs" />
     <Compile Include="ConnectionStrings.cs" />
+    <Compile Include="FakeDomain\Contact.cs" />
+    <Compile Include="FakeDomain\Email.cs" />
+    <Compile Include="FakeDomain\PhoneNumber.cs" />
+    <Compile Include="IncludeTest.cs" />
     <Compile Include="RenamedColumnsUpdateAllTest.cs" />
     <Compile Include="DeleteAllTest.cs" />
     <Compile Include="FakeDomain\BlogPost.cs" />

@@ -113,15 +113,14 @@ namespace Tests
                 db.Database.Create();
             }
 
-            using (var db = Context.SqlCe())
-            {
-
-                var list = new List<BlogPost>(){
+            var list = new List<BlogPost>(){
                     BlogPost.Create("T1"),
                     BlogPost.Create("T2"),
                     BlogPost.Create("T3")
                 };
 
+            using (var db = Context.SqlCe())
+            {
                 EFBatchOperation.For(db, db.BlogPosts).InsertAll(list);
             }
 
