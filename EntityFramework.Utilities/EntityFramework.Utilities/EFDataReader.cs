@@ -20,10 +20,28 @@ namespace EntityFramework.Utilities
             Properties = properties.Select(p => p.NameOnObject).ToList();
             Accessors = properties.Select(p =>
             {
-                PropertyInfo info = typeof(T).GetProperty(p.NameOnObject);
+
+                var parts = p.NameOnObject.Split('.');
+
+                PropertyInfo info = typeof(T).GetProperty(parts[0]);
                 var method = typeof(EFDataReader<T>).GetMethod("MakeDelegate");
                 var generic = method.MakeGenericMethod(info.PropertyType);
-                var getter = (Func<T, object>)generic.Invoke(this, new object[] { info.GetGetMethod(true) }); 
+
+                var getter = (Func<T, object>)generic.Invoke(this, new object[] { info.GetGetMethod(true) });
+
+                var temp = info;
+                foreach (var part in parts.Skip(1))
+                {
+                    var i = temp.PropertyType.GetProperty(part);
+                    var g =  i.GetGetMethod();
+
+                    var old = getter;
+                    getter = x => g.Invoke(old(x), null);
+
+                    temp = i;
+                }
+
+                
                 return getter;
             }).ToList();
             Items = items;
