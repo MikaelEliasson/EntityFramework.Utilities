@@ -70,7 +70,15 @@ namespace EntityFramework.Utilities
                 var sfirst = sSpaceTables.Single(t => t.Name == typeof(T).Name); //Use single to avoid any problems with multiple tables using the same type
                 var ofirst = oSpaceTables.Single(t => t.Name == typeof(T).Name); //Use single to avoid any problems with multiple tables using the same type
 
-                var properties = sfirst.Properties.Zip(ofirst.Properties, (s, o) => new ColumnMapping { NameInDatabase = s.Name, NameOnObject = o.Name }).ToList();
+                var props = ofirst.Properties.SelectMany(p => {
+                    if (p.ComplexType != null)
+                    {
+                        return p.ComplexType.Properties.Select(x => p.Name + "." + x.Name);
+                    }
+                    return Enumerable.Repeat(p.Name, 1);
+                }).ToList();
+
+                var properties = sfirst.Properties.Zip(props, (s, o) => new ColumnMapping { NameInDatabase = s.Name, NameOnObject = o }).ToList();
 
                 provider.InsertItems(items, queryInformation.Table, properties, con.StoreConnection);
             }

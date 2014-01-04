@@ -21,6 +21,7 @@ namespace Tests.FakeDomain
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<BlogPost>().Property(x => x.Created);
+            modelBuilder.ComplexType<AuthorInfo>();
         }
 
         public static Context Sql()
