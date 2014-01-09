@@ -1,15 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.Entity;
+﻿using System.Data.Entity;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
 
 namespace EntityFramework.Utilities
 {
     public static class DatabaseExtensionMethods
     {
-        public static void ForceDrop(this Database db, string name = null)
+        /// <summary>
+        /// Deletes the database even if there are open connections. Like from Management Studio for example
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="name">The name of the database to drop. Should normally not be needed as that is read from the connection string</param>
+        public static void ForceDelete(this Database db, string name = null)
         {
             name = name ?? GetDatabaseName(db.Connection);
             using (SqlConnection sqlconnection = new SqlConnection(db.Connection.ConnectionString)) //Need to run this under other transaction

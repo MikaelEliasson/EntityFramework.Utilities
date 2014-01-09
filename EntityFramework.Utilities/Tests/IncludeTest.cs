@@ -18,7 +18,7 @@ namespace Tests
             {
                 if (db.Database.Exists())
                 {
-                    db.Database.ForceDrop();
+                    db.Database.ForceDelete();
                 }
                 db.Database.Create();
             }
