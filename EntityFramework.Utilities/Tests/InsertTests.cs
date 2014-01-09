@@ -132,5 +132,38 @@ namespace Tests
 
             Assert.IsNotNull(fallbackText);
         }
+
+
+        [TestMethod]
+        public void InsertAll_WithForeignKey()
+        {
+            int postId = -1;
+            using (var db = Context.Sql())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.Delete();
+                }
+                db.Database.Create();
+
+                var bp = BlogPost.Create("B1");
+                db.BlogPosts.Add(bp);
+                db.SaveChanges();
+                postId = bp.ID;
+
+                var comments = new List<Comment>(){
+                    new Comment{Text = "C1", PostId = bp.ID },
+                    new Comment{Text = "C2", PostId = bp.ID },
+                };
+
+                EFBatchOperation.For(db, db.Comments).InsertAll(comments);
+            }
+
+            using (var db = Context.Sql())
+            {
+                Assert.AreEqual(2, db.Comments.Count());
+                Assert.AreEqual(2, db.Comments.Count(c => c.PostId == postId));
+            }
+        }
     }
 }

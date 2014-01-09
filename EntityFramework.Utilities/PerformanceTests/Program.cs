@@ -172,6 +172,7 @@ namespace PerformanceTests
         }
 
         public IDbSet<Comment> Comments { get; set; }
+        public DbSet<Publication> Publications { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
@@ -188,6 +189,15 @@ namespace PerformanceTests
         public DateTime Date { get; set; }
         public int Reads { get; set; }
         public Address Address { get; set; }
+        public int? PublicationId { get; set; }
+        public Publication Publication { get; set; }
+    }
+
+    public class Publication
+    {
+        public int Id { get; set; }
+        public string  Title { get; set; }
+        public ICollection<Comment> Comments { get; set; }
     }
 
     public class Address

@@ -12,6 +12,8 @@ namespace Tests.FakeDomain
         public DateTime Created { get; set; }
         public int Reads { get; set; }
         public AuthorInfo Author { get; set; }
+        public ICollection<Comment> Comments { get; set; }
+
 
         public static BlogPost Create(string title, DateTime created)
         {

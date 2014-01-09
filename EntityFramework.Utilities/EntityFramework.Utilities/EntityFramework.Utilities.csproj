@@ -54,6 +54,7 @@
     <Compile Include="ExpressionHelper.cs" />
     <Compile Include="Fallbacks.cs" />
     <Compile Include="IQueryProvider.cs" />
+    <Compile Include="MappingHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QueryInformation.cs" />
     <Compile Include="SqlQueryProvider.cs" />
