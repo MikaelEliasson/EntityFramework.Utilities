@@ -73,15 +73,15 @@
   <ItemGroup>
     <Compile Include="ConnectionStringReader.cs" />
     <Compile Include="ConnectionStrings.cs" />
-    <Compile Include="FakeDomain\Comment.cs" />
+    <Compile Include="Models\Comment.cs" />
     <Compile Include="RenamedColumnsUpdateAllTest.cs" />
     <Compile Include="DeleteAllTest.cs" />
-    <Compile Include="FakeDomain\BlogPost.cs" />
+    <Compile Include="Models\BlogPost.cs" />
     <Compile Include="FakeDomain\Context.cs" />
     <Compile Include="FakeDomain\RenamedAndReorderedContext.cs" />
-    <Compile Include="FakeDomain\RenamedAndReorderedBlogPost.cs" />
+    <Compile Include="Models\RenamedAndReorderedBlogPost.cs" />
     <Compile Include="FakeDomain\ReorderedContext.cs" />
-    <Compile Include="FakeDomain\ReorderedBlogPost.cs" />
+    <Compile Include="Models\ReorderedBlogPost.cs" />
     <Compile Include="InsertTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UpdateAllTest.cs" />

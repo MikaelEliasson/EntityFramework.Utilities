@@ -5,6 +5,7 @@ using Tests.FakeDomain;
 using System;
 using System.Data.Entity.Core.Objects;
 using System.Data.Entity;
+using Tests.FakeDomain.Models;
 
 namespace Tests
 {

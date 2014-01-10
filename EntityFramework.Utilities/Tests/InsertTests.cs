@@ -3,6 +3,7 @@ using System.Linq;
 using EntityFramework.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.FakeDomain;
+using Tests.FakeDomain.Models;
 
 namespace Tests
 {

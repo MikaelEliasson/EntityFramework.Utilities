@@ -168,8 +168,8 @@ namespace EntityFramework.Utilities
         {
             return metadata
                    .GetItems<EntityType>(DataSpace.OSpace)
-                   .Select(e => objectItemCollection.GetClrType(e))
-                   .Single(e => e.FullName == set.ElementType.FullName);
+                   .Select(objectItemCollection.GetClrType)
+                   .Single(e => e.Name == set.ElementType.Name);
         }
 
         private static XDocument GetEdmx(DbContext db)
