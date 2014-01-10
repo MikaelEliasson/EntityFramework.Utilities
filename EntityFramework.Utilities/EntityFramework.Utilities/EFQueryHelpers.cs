@@ -149,7 +149,7 @@ namespace EntityFramework.Utilities
             Expression temp = expression;
             while (temp is MethodCallExpression)
             {
-                temp = (expression as MethodCallExpression).Arguments[0];
+                temp = (temp as MethodCallExpression).Arguments[0];
             }
 
             return ((temp as ConstantExpression).Value as IIncludeContainer<T>);
@@ -174,18 +174,23 @@ namespace EntityFramework.Utilities
     public static class EFQueryHelpers
     {
 
-        public static EFUQueryable<T> IncludeEFU<T, TChild, TProp>(this IQueryable<T> query, DbContext context, Expression<Func<T, IEnumerable<TChild>>> collectionSelector, Expression<Func<TChild, TProp>> fkSelector)
+        public static EFUQueryable<T> IncludeEFU<T, TChild>(this IQueryable<T> query, DbContext context, Expression<Func<T, IEnumerable<TChild>>> collectionSelector)
             where T : class
             where TChild : class
         {
             var octx = (context as IObjectContextAdapter).ObjectContext;
-            var oSpaceTables = octx.MetadataWorkspace.GetItems<EntityType>(DataSpace.OSpace);
-            var ofirst = oSpaceTables.Single(t => t.Name == typeof(T).Name); //Use single to avoid any problems with multiple tables using the same type
-            var keys = ofirst.KeyProperties;
+            var cSpaceTables = octx.MetadataWorkspace.GetItems<EntityType>(DataSpace.CSpace);
+            var cSpaceType = cSpaceTables.Single(t => t.Name == typeof(T).Name); //Use single to avoid any problems with multiple tables using the same type
+            var keys = cSpaceType.KeyProperties;
             if (keys.Count > 1)
             {
                 throw new InvalidOperationException("The include method only works on single key entities");
             }
+
+            var cSpaceChildType = cSpaceTables.Single(t => t.Name == typeof(TChild).Name); //Use single to avoid any problems with multiple tables using the same type
+            var fk = cSpaceChildType.NavigationProperties.First(n => n.ToEndMember.GetEntityType().Name == typeof(T).Name).GetDependentProperties().First();
+            var fkInfo = typeof(TChild).GetProperty(fk.Name);
+            var fkGetter = MakeGetterDelegate<TChild>(fkInfo);
 
             PropertyInfo info = typeof(T).GetProperty(keys.First().Name);
             var method = typeof(EFDataReader<T>).GetMethod("MakeDelegate");
@@ -202,13 +207,13 @@ namespace EntityFramework.Utilities
                 Loader = (ctx, parents) =>
                 {
                     var set = octx.CreateObjectSet<TChild>();
-                    var dict = set.AsNoTracking().ToLookup(fkSelector.Compile());
+                    var dict = set.AsNoTracking().ToLookup(fkGetter);
                     var list = parents.Cast<T>().ToList();
 
                     foreach (var parent in list)
                     {
                         var prop = getter(parent);
-                        var childs = dict.Contains((TProp)prop) ? dict[(TProp)prop].ToList() : new List<TChild>();
+                        var childs = dict.Contains(prop) ? dict[prop].ToList() : new List<TChild>();
                         setter(parent, childs);
                     }
 
@@ -229,6 +234,23 @@ namespace EntityFramework.Utilities
                 var body = Expression.Call(target, setMethod,
                     Expression.Convert(value, property.PropertyType));
                 return Expression.Lambda<Action<T, object>>(body, target, value)
+                    .Compile();
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        static Func<X, object> MakeGetterDelegate<X>(PropertyInfo property)
+        {
+            MethodInfo getMethod = property.GetGetMethod();
+            if (getMethod != null)
+            {
+                var target = Expression.Parameter(typeof(X));
+                var body = Expression.Call(target, getMethod);
+                Expression conversion = Expression.Convert(body, typeof(object));
+                return Expression.Lambda<Func<X, object>>(conversion, target)
                     .Compile();
             }
             else
