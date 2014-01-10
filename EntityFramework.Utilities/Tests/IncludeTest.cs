@@ -2,7 +2,9 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using Tests.FakeDomain;
 
@@ -231,13 +233,14 @@ namespace Tests
                 db.Database.Create();
                 CreateSmallTestSet(db);
             }
+
             using (var db = Context.Sql())
             {
                 var result = db.Contacts
-                    .IncludeEFU(db, x => x.PhoneNumbers)
-                    .IncludeEFU(db, x => x.Emails)
-                    .Where(x => !x.FirstName.Contains("3"))
-                    .OrderByDescending(x => x.FirstName)
+                    .IncludeEFU(db, c => c.PhoneNumbers)
+                    .IncludeEFU(db, c => c.Emails)
+                    .Where(c => !c.FirstName.Contains("3"))
+                    .OrderByDescending(c => c.FirstName)
                     .ToList();
 
                 Assert.AreEqual(2, result.Count);
@@ -250,6 +253,139 @@ namespace Tests
                 Assert.AreEqual(2, fn1.PhoneNumbers.Count);
                 Assert.AreEqual(0, fn1.Emails.Count);
                 Assert.AreEqual('1', fn1.PhoneNumbers.First().Number.First());
+
+                Assert.AreEqual(2, fn2.PhoneNumbers.Count);
+                Assert.AreEqual('2', fn2.PhoneNumbers.First().Number.First());
+                Assert.AreEqual(2, fn2.Emails.Count);
+            }
+        }
+
+        [TestMethod]
+        public void DoubleIncludes_WherePropEqualsSomething_LoadsChildren()
+        {
+            using (var db = Context.Sql())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.ForceDelete();
+                }
+                db.Database.Create();
+                CreateSmallTestSet(db);
+            }
+
+            using (var db = Context.Sql())
+            {
+                var result = db.Contacts
+                    .IncludeEFU(db, c => c.PhoneNumbers)
+                    .IncludeEFU(db, c => c.Emails)
+                    .Where(c => c.FirstName == "FN2")
+                    .OrderByDescending(c => c.FirstName)
+                    .ToList();
+
+                Assert.AreEqual(1, result.Count);
+
+                var fn2 = result[0];
+                Assert.AreEqual("FN2", fn2.FirstName);
+
+                Assert.AreEqual(2, fn2.PhoneNumbers.Count);
+                Assert.AreEqual('2', fn2.PhoneNumbers.First().Number.First());
+                Assert.AreEqual(2, fn2.Emails.Count);
+            }
+        }
+
+        [TestMethod]
+        public void DoubleIncludes_DoubleWheres_LoadsChildren()
+        {
+            using (var db = Context.Sql())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.ForceDelete();
+                }
+                db.Database.Create();
+                CreateSmallTestSet(db);
+            }
+
+            using (var db = Context.Sql())
+            {
+                var result = db.Contacts
+                    .Where(c => c.FirstName == "FN2")
+                    .IncludeEFU(db, c => c.PhoneNumbers)
+                    .IncludeEFU(db, c => c.Emails)
+                    .Where(c => DbFunctions.Reverse(c.FirstName) == "2NF")
+                    .OrderByDescending(c => c.FirstName)
+                    .ToList();
+
+                Assert.AreEqual(1, result.Count);
+
+                var fn2 = result[0];
+                Assert.AreEqual("FN2", fn2.FirstName);
+
+                Assert.AreEqual(2, fn2.PhoneNumbers.Count);
+                Assert.AreEqual('2', fn2.PhoneNumbers.First().Number.First());
+                Assert.AreEqual(2, fn2.Emails.Count);
+            }
+        }
+
+        [TestMethod]
+        public void DoubleIncludes_WhereWithOr_LoadsChildren()
+        {
+            using (var db = Context.Sql())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.ForceDelete();
+                }
+                db.Database.Create();
+                CreateSmallTestSet(db);
+            }
+
+            using (var db = Context.Sql())
+            {
+                var result = db.Contacts
+                    .IncludeEFU(db, c => c.PhoneNumbers)
+                    .IncludeEFU(db, c => c.Emails)
+                    .Where(c => c.FirstName == "FN2" || c.FirstName == "FN4")
+                    .OrderByDescending(c => c.FirstName)
+                    .ToList();
+
+                Assert.AreEqual(1, result.Count);
+
+                var fn2 = result[0];
+                Assert.AreEqual("FN2", fn2.FirstName);
+
+                Assert.AreEqual(2, fn2.PhoneNumbers.Count);
+                Assert.AreEqual('2', fn2.PhoneNumbers.First().Number.First());
+                Assert.AreEqual(2, fn2.Emails.Count);
+            }
+        }
+
+        [TestMethod]
+        public void DoubleIncludes_WhereWithDbFunction_LoadsChildren()
+        {
+            using (var db = Context.Sql())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.ForceDelete();
+                }
+                db.Database.Create();
+                CreateSmallTestSet(db);
+            }
+
+            using (var db = Context.Sql())
+            {
+                var result = db.Contacts
+                    .IncludeEFU(db, c => c.PhoneNumbers)
+                    .IncludeEFU(db, c => c.Emails)
+                    .Where(c => DbFunctions.Reverse(c.FirstName) == "2NF")
+                    .OrderByDescending(c => c.FirstName)
+                    .ToList();
+
+                Assert.AreEqual(1, result.Count);
+
+                var fn2 = result[0];
+                Assert.AreEqual("FN2", fn2.FirstName);
 
                 Assert.AreEqual(2, fn2.PhoneNumbers.Count);
                 Assert.AreEqual('2', fn2.PhoneNumbers.First().Number.First());

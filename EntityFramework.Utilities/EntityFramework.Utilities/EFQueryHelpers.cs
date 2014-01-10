@@ -132,6 +132,18 @@ namespace EntityFramework.Utilities
             if (expression == null) throw new ArgumentNullException("expression");
             var p = source.Provider;
 
+            var wheres = new List<MethodCallExpression>();
+            var temp = expression;
+            while (temp is MethodCallExpression)
+            {
+                var func = (temp as MethodCallExpression);
+                if (func.Method.Name == "Where")
+                {
+                    wheres.Add(func);
+                }
+                temp = func.Arguments[0];
+            }
+
             var efuQuery = GetIncludeContainer(expression);
             var first = efuQuery.Includes.First();
             Expression translated = this.Visit(expression);
@@ -139,7 +151,7 @@ namespace EntityFramework.Utilities
             foreach (var item in source.Provider.CreateQuery(translated)){
                 list.Add(item);
             }
-            var data = first.Loader(null, list).ToList();
+            var data = first.Loader(null, wheres, list).ToList();
 
             return list;
         }
@@ -193,21 +205,26 @@ namespace EntityFramework.Utilities
             var fkGetter = MakeGetterDelegate<TChild>(fkInfo);
 
             PropertyInfo info = typeof(T).GetProperty(keys.First().Name);
-            var method = typeof(EFDataReader<T>).GetMethod("MakeDelegate");
-            var generic = method.MakeGenericMethod(info.PropertyType);
-            var getter = (Func<T, object>)generic.Invoke(null, new object[] { info.GetGetMethod(true) });
+            var getter = MakeGetterDelegate<T>(info);
 
             var childProp = (collectionSelector.Body as MemberExpression).Member as PropertyInfo;
             var setter = MakeSetterDelegate<T>(childProp);
 
-
             var e = new IncludeExecuter<T>
             {
                 ElementType = typeof(TChild),
-                Loader = (ctx, parents) =>
+                Loader = (ctx, rootFilters, parents) =>
                 {
-                    var set = octx.CreateObjectSet<TChild>();
-                    var dict = set.AsNoTracking().ToLookup(fkGetter);
+                    var set = octx.CreateObjectSet<T>();
+                    IQueryable<T> q = set;
+                    foreach (var item in rootFilters)
+                    {
+                        q = q.Where((Expression<Func<T, bool>>)((item as MethodCallExpression).Arguments[1] as UnaryExpression).Operand);
+                    }
+                    var parameter = Expression.Parameter(typeof(T), "t");
+                    var memberExpression =  Expression.Property(parameter, cSpaceType.NavigationProperties.First(p => p.ToEndMember.GetEntityType().Name == typeof(TChild).Name).Name);
+                    var lambdaExpression = Expression.Lambda<Func<T, IEnumerable<TChild>>>(memberExpression, parameter);
+                    var dict = q.SelectMany(lambdaExpression).AsNoTracking().ToLookup(fkGetter);
                     var list = parents.Cast<T>().ToList();
 
                     foreach (var parent in list)
@@ -263,7 +280,7 @@ namespace EntityFramework.Utilities
     public class IncludeExecuter<T>
     {
         internal Type ElementType { get; set; }
-        internal Func<ObjectContext, IEnumerable, IEnumerable<object>> Loader { get; set; }
+        internal Func<ObjectContext, IEnumerable<Expression>, IEnumerable, IEnumerable<object>> Loader { get; set; }
     }
 
      
