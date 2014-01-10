@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
@@ -12,18 +13,18 @@ using System.Text;
 namespace EntityFramework.Utilities
 {
 
-    public interface IIncludeContainer
+    public interface IIncludeContainer<T>
     {
-        IEnumerable<IncludeExecuter> Includes { get;  }
+        IEnumerable<IncludeExecuter<T>> Includes { get;  }
     }
 
-    public class EFUQueryable<T> : IOrderedQueryable<T>, IIncludeContainer
+    public class EFUQueryable<T> : IOrderedQueryable<T>, IIncludeContainer<T>
     {
         private Expression expression = null;
         private EFUQueryProvider<T> provider = null;
-        private List<IncludeExecuter> includes = new List<IncludeExecuter>();
+        private List<IncludeExecuter<T>> includes = new List<IncludeExecuter<T>>();
 
-        public IEnumerable<IncludeExecuter> Includes { get { return includes; } }
+        public IEnumerable<IncludeExecuter<T>> Includes { get { return includes; } }
 
         public EFUQueryable(IQueryable source)
         {
@@ -40,7 +41,7 @@ namespace EntityFramework.Utilities
 
         public IEnumerator<T> GetEnumerator()
         {
-            return ((IEnumerable<T>)provider.ExecuteEnumerable(this.expression)).GetEnumerator();
+            return provider.ExecuteEnumerable(this.expression).Cast<T>().GetEnumerator();
         }
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
@@ -48,7 +49,7 @@ namespace EntityFramework.Utilities
             return provider.ExecuteEnumerable(this.expression).GetEnumerator();
         }
 
-        public EFUQueryable<T> Include(IncludeExecuter include)
+        public EFUQueryable<T> Include(IncludeExecuter<T> include)
         {
             this.includes.Add(include);
             return this;
@@ -131,15 +132,27 @@ namespace EntityFramework.Utilities
             if (expression == null) throw new ArgumentNullException("expression");
             var p = source.Provider;
 
-
-
-            //var t = ((((expression as ConstantExpression).Value as EFUQueryable<Contact>).Includes.First() as LambdaExpression).Body as MemberExpression).Type.GetGenericArguments()[0];
-
-            var first = ((expression as ConstantExpression).Value as IIncludeContainer).Includes.First();
-            var data = first.Accessor(null).ToList();
-
+            var efuQuery = GetIncludeContainer(expression);
+            var first = efuQuery.Includes.First();
             Expression translated = this.Visit(expression);
-            return source.Provider.CreateQuery(translated);
+            var list = new List<object>();
+            foreach (var item in source.Provider.CreateQuery(translated)){
+                list.Add(item);
+            }
+            var data = first.Loader(null, list).ToList();
+
+            return list;
+        }
+
+        private IIncludeContainer<T> GetIncludeContainer(Expression expression)
+        {
+            Expression temp = expression;
+            while (temp is MethodCallExpression)
+            {
+                temp = (expression as MethodCallExpression).Arguments[0];
+            }
+
+            return ((temp as ConstantExpression).Value as IIncludeContainer<T>);
         }
 
         #region Visitors
@@ -161,28 +174,75 @@ namespace EntityFramework.Utilities
     public static class EFQueryHelpers
     {
 
-        public static EFUQueryable<T> IncludeEFU<T, TChild>(this IQueryable<T> query, DbContext context, Expression<Func<T, IEnumerable<TChild>>> collectionSelector)
+        public static EFUQueryable<T> IncludeEFU<T, TChild, TProp>(this IQueryable<T> query, DbContext context, Expression<Func<T, IEnumerable<TChild>>> collectionSelector, Expression<Func<TChild, TProp>> fkSelector)
             where T : class
             where TChild : class
         {
             var octx = (context as IObjectContextAdapter).ObjectContext;
-            var e = new IncludeExecuter
+            var oSpaceTables = octx.MetadataWorkspace.GetItems<EntityType>(DataSpace.OSpace);
+            var ofirst = oSpaceTables.Single(t => t.Name == typeof(T).Name); //Use single to avoid any problems with multiple tables using the same type
+            var keys = ofirst.KeyProperties;
+            if (keys.Count > 1)
+            {
+                throw new InvalidOperationException("The include method only works on single key entities");
+            }
+
+            PropertyInfo info = typeof(T).GetProperty(keys.First().Name);
+            var method = typeof(EFDataReader<T>).GetMethod("MakeDelegate");
+            var generic = method.MakeGenericMethod(info.PropertyType);
+            var getter = (Func<T, object>)generic.Invoke(null, new object[] { info.GetGetMethod(true) });
+
+            var childProp = (collectionSelector.Body as MemberExpression).Member as PropertyInfo;
+            var setter = MakeSetterDelegate<T>(childProp);
+
+
+            var e = new IncludeExecuter<T>
             {
                 ElementType = typeof(TChild),
-                Accessor = ctx =>
+                Loader = (ctx, parents) =>
                 {
                     var set = octx.CreateObjectSet<TChild>();
-                    return set.ToList();
+                    var dict = set.AsNoTracking().ToLookup(fkSelector.Compile());
+                    var list = parents.Cast<T>().ToList();
+
+                    foreach (var parent in list)
+                    {
+                        var prop = getter(parent);
+                        var childs = dict.Contains((TProp)prop) ? dict[(TProp)prop].ToList() : new List<TChild>();
+                        setter(parent, childs);
+                    }
+
+                    return dict.SelectMany(d => d);
                 }
             };
 
-            return new EFUQueryable<T>(query).Include(e);
+            return new EFUQueryable<T>(query.AsNoTracking()).Include(e);
+        }
+
+        static Action<T, object> MakeSetterDelegate<T>(PropertyInfo property)
+        {
+            MethodInfo setMethod = property.GetSetMethod();
+            if (setMethod != null && setMethod.GetParameters().Length == 1)
+            {
+                var target = Expression.Parameter(typeof(T));
+                var value = Expression.Parameter(typeof(object));
+                var body = Expression.Call(target, setMethod,
+                    Expression.Convert(value, property.PropertyType));
+                return Expression.Lambda<Action<T, object>>(body, target, value)
+                    .Compile();
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 
-    public class IncludeExecuter
+    public class IncludeExecuter<T>
     {
         internal Type ElementType { get; set; }
-        internal Func<ObjectContext, IEnumerable<object>> Accessor { get; set; }
+        internal Func<ObjectContext, IEnumerable, IEnumerable<object>> Loader { get; set; }
     }
+
+     
 }
