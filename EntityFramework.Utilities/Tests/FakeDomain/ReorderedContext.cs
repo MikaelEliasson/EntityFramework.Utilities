@@ -4,6 +4,7 @@ using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Text;
+using Tests.FakeDomain.Models;
 
 namespace Tests.FakeDomain
 {
@@ -25,6 +26,9 @@ namespace Tests.FakeDomain
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<ReorderedBlogPost>().ToTable("BlogPosts");
+            modelBuilder.ComplexType<AuthorInfo>();
+            modelBuilder.ComplexType<Address>();
+
         }
 
     }

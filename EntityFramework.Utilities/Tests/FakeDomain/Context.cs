@@ -4,6 +4,7 @@ using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Text;
+using Tests.FakeDomain.Models;
 
 namespace Tests.FakeDomain
 {
@@ -19,10 +20,13 @@ namespace Tests.FakeDomain
         public DbSet<Contact> Contacts { get; set; }
         public DbSet<PhoneNumber> PhoneNumbers { get; set; }
         public DbSet<Email> Emails { get; set; }
+        public DbSet<Comment> Comments { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.ComplexType<AuthorInfo>();
+            modelBuilder.ComplexType<Address>();
         }
 
         public static Context Sql()

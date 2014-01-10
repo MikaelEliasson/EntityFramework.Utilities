@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Core.EntityClient;
-using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Infrastructure;
 using System.Data.SqlClient;
@@ -32,14 +31,18 @@ namespace EntityFramework.Utilities
             return EFBatchOperation<TContext, T>.For(context, set);
         }
     }
-    public class EFBatchOperation<TContext, T> : IEFBatchOperationBase<TContext, T>, IEFBatchOperationFiltered<TContext, T> where T : class
+    public class EFBatchOperation<TContext, T> : IEFBatchOperationBase<TContext, T>, IEFBatchOperationFiltered<TContext, T> 
+        where T : class
+        where TContext : DbContext
     {
         private ObjectContext context;
+        private DbContext dbContext;
         private IDbSet<T> set;
         private Expression<Func<T, bool>> predicate;
 
         private EFBatchOperation(TContext context, IDbSet<T> set)
         {
+            this.dbContext = context;
             this.context = (context as IObjectContextAdapter).ObjectContext;
             this.set = set;
         }
@@ -63,16 +66,14 @@ namespace EntityFramework.Utilities
             var provider = Configuration.Providers.FirstOrDefault(p => p.CanHandle(con.StoreConnection));
             if (provider != null && provider.CanInsert)
             {
-                var set = context.CreateObjectSet<T>();
-                var queryInformation = provider.GetQueryInformation<T>(set);
-                var sSpaceTables = context.MetadataWorkspace.GetItems<EntityType>(DataSpace.SSpace);
-                var oSpaceTables = context.MetadataWorkspace.GetItems<EntityType>(DataSpace.OSpace);
-                var sfirst = sSpaceTables.Single(t => t.Name == typeof(T).Name); //Use single to avoid any problems with multiple tables using the same type
-                var ofirst = oSpaceTables.Single(t => t.Name == typeof(T).Name); //Use single to avoid any problems with multiple tables using the same type
 
-                var properties = sfirst.Properties.Zip(ofirst.Properties, (s, o) => new ColumnMapping { NameInDatabase = s.Name, NameOnObject = o.Name }).ToList();
+                var mapping = EntityFramework.Utilities.EfMappingFactory.GetMappingsForContext(this.dbContext);
+                var typeMapping = mapping.TypeMappings[typeof(T)];
+                var tableMapping = typeMapping.TableMappings.First();
 
-                provider.InsertItems(items, queryInformation.Table, properties, con.StoreConnection);
+                var properties = tableMapping.PropertyMappings.Select(p => new ColumnMapping { NameInDatabase = p.ColumnName, NameOnObject = p.PropertyName }).ToList();
+
+                provider.InsertItems(items, tableMapping.TableName, properties, con.StoreConnection);
             }
             else
             {

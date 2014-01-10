@@ -4,6 +4,7 @@ using EntityFramework.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.FakeDomain;
 using System.Collections.Generic;
+using Tests.FakeDomain.Models;
 
 namespace Tests
 {

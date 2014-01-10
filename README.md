@@ -40,46 +40,28 @@ Nuget package https://www.nuget.org/packages/EFUtilities/
 
 ## Examples
 
-### DeleteAll
+### Delete by query
+
+This will let you delete all Entities matching the predicate. But instead of the normal way to do this with EF (Load them into memory then delete them one by one) this method will create a Sql Query that deletes all items in one single call to the database. Here is how a call looks:
 
 ```c#
-public static int DeleteAll<T>(this DbContext source, Expression<Func<T, bool>> predicate) where T : class
+var count = EFBatchOperation.For(db, db.BlogPosts).Where(b => b.Created < upper && b.Created > lower && b.Title == "T2.0").Delete();
 ```
 
-This method will delete all Entities matching the predicate. But instead of the normal way to do this with EF (Load them into memory then delete them one by one) this method will create a Sql Query that deletes all items in one single call to the database.
 
-```c#
-               using (var db = new Context())
-                {
-                    var limit = DateTime.Today.AddDays(-5000);
-                    db.DeleteAll<BlogPost>(p => p.Created > limit);
-                }
-```
-
-You need to include a using EntityFramework.Utilities; for the extension method to be found.
-
-**Limitations:** This method works by parsing the SQL generated when the predicate was used in a where clause. Aliases are removed when creating the delete clause so joins/subqueries are NOT supported/tested. Feel free to test if it works an if you have any idea of how to make it work I'm interested in supporting it if it doesn't add too much complexity. No contraints are checked by EF (though sql constraints are)
+**Limitations:** This method works by parsing the SQL generated when the predicate was used in a where clause. Aliases are removed when creating the delete clause so joins/subqueries are NOT supported/tested. Feel free to test if it works an if you have any idea of how to make it work I'm interested in supporting it if it doesn't add too much complexity. No constraints are checked by EF (though sql constraints are)
 
 **Warning:** Because you are removing items directly from the database the context might still think they exist. If you have made any changes to a tracked entity that is then deleted by the query you will see some issues if you call SaveChanges on the context. 
 
-### InsertAll
+### Batch insert entities
+
+
+Allows you to insert many entities in a very performant way instead of adding them one by one as you normally would do with EF. The benefit is superior performance, the disadvantage is that EF will no longer validate any contraits for you and you will not get the ids back if they are store generated. 
 
 ```c#
-public static void InsertAll<T>(this DbContext source, IEnumerable<T> items) where T : class
-```
-
-This method uses the SqlBulkInserter to insert the items instead of adding them one by one as you normally would do with EF. The benefit is superior performance, the disadvantage is that EF will no longer validate any contraits for you and you will not get the ids back. 
-
-```c#
-           using (var db = new Context())
+            using (var db = Context.Sql())
             {
-                var list = new List<BlogPost>(10000);
-                for (int i = 0; i < 10000; i++)
-                {
-                    var p = BlogPost.Create("T" + i, DateTime.Today.AddDays(i - 10000));
-                    list.Add(p);
-                }
-                db.InsertAll(list);
+                EFBatchOperation.For(db, db.BlogPosts).InsertAll(list);
             }
 ```
 
@@ -87,28 +69,25 @@ On my dev machine that runs at around 500ms instead of 10s using the 'out of the
 
 SqlBulkCopy is used under the covers if you are running against SqlServer. If you are not running against SqlServer it will default to doing the normal inserts.
  
-**Warning:** Right now this will probably not work if there are many DbSets of the object type you are trying to insert.  
+**Warning:** It should be able to handle renamed columns but I'm not 100% sure if it handle all cases of removed columns  
+
+### Update by query
 
 
-### UpdateAll
+Let you update many entities in one sql query instead of loading them into memory and, modifing them and saving back to db.
 
 ```c#
-public static int UpdateAll<T>(this DbContext source, Expression<Func<T, bool>> predicate, Expression<Func<T, object>> modifier) where T : class
+            using (var db = new Context())
+            {
+                EFBatchOperation.For(db, db.Comments).Where(x => x.Text == "a").Update(x => x.Reads, x => x.Reads + 1);
+            }
 ```
-This method works exactly like DeleteAll but instead of deleting the entities it created a query to update them.
+The modifications you can do should be what EF can support in it's queries. For example it's possible to do:
 
-The code:
-```c#
-using (var db = new Context())
-{
-   db.UpdateAll<BlogPost>(b => b.Title == "T1", b => b.Reads * 2);
-}
-```
-Will generate the sql:
 
-`UPDATE [dbo].[BlogPosts] SET [Reads] = [Reads] * 2 WHERE N'T1' = [Title]`
+```c#count = EFBatchOperation.For(db, db.BlogPosts).Where(b => b.Title == "T2").Update(b => b.Created, b => DbFunctions.AddDays(b.Created, 1));```
 
-Right now only numbers and string manipulations are supported and the operators that are supported are [+, -, /, *]. Also only a single property might be updated. An improvement of this method is likely for future versions. 
+To incrememt the day one step. This method should be able to handle any renamed columns but the pitfall here is that this works internally by running the modifier through a where clause to get the SQL and than this where clause is transformed to a set clause. The rules for set and where are different so this might not always be valid. This is the most fragile of the methods but you can always test and if it doesn't work open an issue on github and it might get fixed. 
 
 
 ## Performance
