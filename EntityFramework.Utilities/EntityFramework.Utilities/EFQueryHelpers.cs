@@ -204,10 +204,24 @@ namespace EntityFramework.Utilities
             var fkInfo = typeof(TChild).GetProperty(fk.Name);
             var fkGetter = MakeGetterDelegate<TChild>(fkInfo);
 
-            PropertyInfo info = typeof(T).GetProperty(keys.First().Name);
-            var getter = MakeGetterDelegate<T>(info);
+            PropertyInfo pkInfo = typeof(T).GetProperty(keys.First().Name);
+            var pkGetter = MakeGetterDelegate<T>(pkInfo);
 
-            var childProp = (collectionSelector.Body as MemberExpression).Member as PropertyInfo;
+            var childCollectionModifiers = new List<MethodCallExpression>();
+            var temp = collectionSelector.Body;
+            while (temp is MethodCallExpression)
+            {
+                var mce = temp as MethodCallExpression;
+                childCollectionModifiers.Add(mce);
+                temp = mce.Arguments[0];
+            }
+            childCollectionModifiers.Reverse(); //We parse from right to left so reverse it
+            if (!(temp is MemberExpression))
+            {
+                throw new ArgumentException("Could not find a MemberExpression", "collectionSelector");
+            }
+
+            var childProp = (temp as MemberExpression).Member as PropertyInfo;
             var setter = MakeSetterDelegate<T>(childProp);
 
             var e = new IncludeExecuter<T>
@@ -221,15 +235,35 @@ namespace EntityFramework.Utilities
                     {
                         q = q.Where((Expression<Func<T, bool>>)((item as MethodCallExpression).Arguments[1] as UnaryExpression).Operand);
                     }
-                    var parameter = Expression.Parameter(typeof(T), "t");
-                    var memberExpression =  Expression.Property(parameter, cSpaceType.NavigationProperties.First(p => p.ToEndMember.GetEntityType().Name == typeof(TChild).Name).Name);
-                    var lambdaExpression = Expression.Lambda<Func<T, IEnumerable<TChild>>>(memberExpression, parameter);
-                    var dict = q.SelectMany(lambdaExpression).AsNoTracking().ToLookup(fkGetter);
+
+                    var lambdaExpression = GetRootEntityToChildCollectionSelector<T,TChild>(cSpaceType);
+
+                    var childQ = q.SelectMany(lambdaExpression);
+                    foreach (var item in childCollectionModifiers)
+                    {
+                        switch (item.Method.Name)
+                        {
+                            case "Where":
+                                childQ = childQ.Where((Expression<Func<TChild, bool>>)item.Arguments[1]);
+                                break;
+                            case "OrderBy":
+                            case "ThenBy":
+                            case "OrderByDescending":
+                            case "ThenByDescending":
+                                childQ = SortQuery(childQ, item, item.Method.Name);
+                                break;
+                            default:
+                                throw new NotSupportedException("The method " + item.Method.Name + " is not supported in the child query");
+                        }
+
+                    }
+
+                    var dict = childQ.AsNoTracking().ToLookup(fkGetter);
                     var list = parents.Cast<T>().ToList();
 
                     foreach (var parent in list)
                     {
-                        var prop = getter(parent);
+                        var prop = pkGetter(parent);
                         var childs = dict.Contains(prop) ? dict[prop].ToList() : new List<TChild>();
                         setter(parent, childs);
                     }
@@ -239,6 +273,35 @@ namespace EntityFramework.Utilities
             };
 
             return new EFUQueryable<T>(query.AsNoTracking()).Include(e);
+        }
+
+        private static IQueryable<TChild> SortQuery<TChild>(IQueryable<TChild> query, MethodCallExpression item, string method)
+        {
+            var body = (item.Arguments[1] as LambdaExpression);
+
+            MethodCallExpression call = Expression.Call(
+                typeof(Queryable),
+                method,
+                new[] { typeof(TChild), body.Body.Type },
+                query.Expression,
+                Expression.Quote(body));
+
+            return (IOrderedQueryable<TChild>)query.Provider.CreateQuery<TChild>(call);
+
+            //var body = (item.Arguments[1] as LambdaExpression).Body as MemberExpression;
+            //var converted = Expression.Convert(body, typeof(object));
+
+            //return Expression.Lambda<Func<TChild, object>>(converted, (item.Arguments[1] as LambdaExpression).Parameters[0]);
+        }
+
+        private static Expression<Func<T, IEnumerable<TChild>>> GetRootEntityToChildCollectionSelector<T, TChild>(EntityType cSpaceType)
+            where T : class
+            where TChild : class
+        {
+            var parameter = Expression.Parameter(typeof(T), "t");
+            var memberExpression = Expression.Property(parameter, cSpaceType.NavigationProperties.First(p => p.ToEndMember.GetEntityType().Name == typeof(TChild).Name).Name);
+            var lambdaExpression = Expression.Lambda<Func<T, IEnumerable<TChild>>>(memberExpression, parameter);
+            return lambdaExpression;
         }
 
         static Action<T, object> MakeSetterDelegate<T>(PropertyInfo property)

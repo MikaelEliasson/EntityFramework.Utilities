@@ -16,15 +16,7 @@ namespace Tests
         [TestMethod]
         public void SingleInclude_LoadsChildren()
         {
-            using (var db = Context.Sql())
-            {
-                if (db.Database.Exists())
-                {
-                    db.Database.ForceDelete();
-                }
-                db.Database.Create();
-                CreateSmallTestSet(db);
-            }
+            SetupSmallTestSet();
             using (var db = Context.Sql())
             {
                 var result = db.Contacts.IncludeEFU(db, x => x.PhoneNumbers).ToList();
@@ -43,15 +35,7 @@ namespace Tests
         [TestMethod]
         public void SingleInclude_SortedParent_LoadsChildren()
         {
-            using (var db = Context.Sql())
-            {
-                if (db.Database.Exists())
-                {
-                    db.Database.ForceDelete();
-                }
-                db.Database.Create();
-                CreateSmallTestSet(db);
-            }
+            SetupSmallTestSet();
             using (var db = Context.Sql())
             {
                 var result = db.Contacts.OrderByDescending(x => x.FirstName).IncludeEFU(db, x => x.PhoneNumbers).ToList();
@@ -74,15 +58,7 @@ namespace Tests
         [TestMethod]
         public void SingleInclude_SortAfterInclude_LoadsChildren()
         {
-            using (var db = Context.Sql())
-            {
-                if (db.Database.Exists())
-                {
-                    db.Database.ForceDelete();
-                }
-                db.Database.Create();
-                CreateSmallTestSet(db);
-            }
+            SetupSmallTestSet();
             using (var db = Context.Sql())
             {
                 var result = db.Contacts.IncludeEFU(db, x => x.PhoneNumbers).OrderByDescending(x => x.FirstName).ToList();
@@ -105,15 +81,7 @@ namespace Tests
         [TestMethod]
         public void DoubleIncludes_LoadsChildren()
         {
-            using (var db = Context.Sql())
-            {
-                if (db.Database.Exists())
-                {
-                    db.Database.ForceDelete();
-                }
-                db.Database.Create();
-                CreateSmallTestSet(db);
-            }
+            SetupSmallTestSet();
             using (var db = Context.Sql())
             {
                 var result = db.Contacts
@@ -142,15 +110,7 @@ namespace Tests
         [TestMethod]
         public void DoubleIncludes_PreSort_LoadsChildren()
         {
-            using (var db = Context.Sql())
-            {
-                if (db.Database.Exists())
-                {
-                    db.Database.ForceDelete();
-                }
-                db.Database.Create();
-                CreateSmallTestSet(db);
-            }
+            SetupSmallTestSet();
             using (var db = Context.Sql())
             {
                 var result = db.Contacts
@@ -183,15 +143,7 @@ namespace Tests
         [TestMethod]
         public void DoubleIncludes_PostSort_LoadsChildren()
         {
-            using (var db = Context.Sql())
-            {
-                if (db.Database.Exists())
-                {
-                    db.Database.ForceDelete();
-                }
-                db.Database.Create();
-                CreateSmallTestSet(db);
-            }
+            SetupSmallTestSet();
             using (var db = Context.Sql())
             {
                 var result = db.Contacts        
@@ -224,15 +176,7 @@ namespace Tests
         [TestMethod]
         public void DoubleIncludes_SortAndWhere_LoadsChildren()
         {
-            using (var db = Context.Sql())
-            {
-                if (db.Database.Exists())
-                {
-                    db.Database.ForceDelete();
-                }
-                db.Database.Create();
-                CreateSmallTestSet(db);
-            }
+            SetupSmallTestSet();
 
             using (var db = Context.Sql())
             {
@@ -263,15 +207,7 @@ namespace Tests
         [TestMethod]
         public void DoubleIncludes_WherePropEqualsSomething_LoadsChildren()
         {
-            using (var db = Context.Sql())
-            {
-                if (db.Database.Exists())
-                {
-                    db.Database.ForceDelete();
-                }
-                db.Database.Create();
-                CreateSmallTestSet(db);
-            }
+            SetupSmallTestSet();
 
             using (var db = Context.Sql())
             {
@@ -296,15 +232,7 @@ namespace Tests
         [TestMethod]
         public void DoubleIncludes_DoubleWheres_LoadsChildren()
         {
-            using (var db = Context.Sql())
-            {
-                if (db.Database.Exists())
-                {
-                    db.Database.ForceDelete();
-                }
-                db.Database.Create();
-                CreateSmallTestSet(db);
-            }
+            SetupSmallTestSet();
 
             using (var db = Context.Sql())
             {
@@ -330,15 +258,7 @@ namespace Tests
         [TestMethod]
         public void DoubleIncludes_WhereWithOr_LoadsChildren()
         {
-            using (var db = Context.Sql())
-            {
-                if (db.Database.Exists())
-                {
-                    db.Database.ForceDelete();
-                }
-                db.Database.Create();
-                CreateSmallTestSet(db);
-            }
+            SetupSmallTestSet();
 
             using (var db = Context.Sql())
             {
@@ -363,15 +283,7 @@ namespace Tests
         [TestMethod]
         public void DoubleIncludes_WhereWithDbFunction_LoadsChildren()
         {
-            using (var db = Context.Sql())
-            {
-                if (db.Database.Exists())
-                {
-                    db.Database.ForceDelete();
-                }
-                db.Database.Create();
-                CreateSmallTestSet(db);
-            }
+            SetupSmallTestSet();
 
             using (var db = Context.Sql())
             {
@@ -390,6 +302,103 @@ namespace Tests
                 Assert.AreEqual(2, fn2.PhoneNumbers.Count);
                 Assert.AreEqual('2', fn2.PhoneNumbers.First().Number.First());
                 Assert.AreEqual(2, fn2.Emails.Count);
+            }
+        }
+
+
+        [TestMethod]
+        public void SingleInclude_LoadsChildrenOrdered()
+        {
+            SetupSmallTestSet();
+            using (var db = Context.Sql())
+            {
+                var result = db.Contacts.IncludeEFU(db, x => x.PhoneNumbers.OrderBy(p => p.Number)).ToList();
+                var fn1 = result.First(x => x.FirstName == "FN1");
+
+                Assert.AreEqual(2, fn1.PhoneNumbers.Count);
+                Assert.AreEqual("10134", fn1.PhoneNumbers.First().Number);
+            }
+
+            using (var db = Context.Sql())
+            {
+                var result = db.Contacts.IncludeEFU(db, x => x.PhoneNumbers.OrderByDescending(p => p.Number)).ToList();
+                var fn1 = result.First(x => x.FirstName == "FN1");
+
+                Assert.AreEqual(2, fn1.PhoneNumbers.Count);
+                Assert.AreEqual("15678", fn1.PhoneNumbers.First().Number);
+            }
+        }
+
+        [TestMethod]
+        public void SingleInclude_LoadsChildrenOrderedWithThenBy()
+        {
+            SetupSmallTestSet();
+            using (var db = Context.Sql())
+            {
+                var result = db.Contacts.IncludeEFU(db, x => x.PhoneNumbers.OrderBy(p => p.ContactId).ThenBy(p => p.Number)).ToList();
+                var fn1 = result.First(x => x.FirstName == "FN1");
+
+                Assert.AreEqual(2, fn1.PhoneNumbers.Count);
+                Assert.AreEqual("10134", fn1.PhoneNumbers.First().Number);
+            }
+
+            using (var db = Context.Sql())
+            {
+                var result = db.Contacts.IncludeEFU(db, x => x.PhoneNumbers.OrderBy(p => p.ContactId).ThenByDescending(p => p.Number)).ToList();
+                var fn1 = result.First(x => x.FirstName == "FN1");
+
+                Assert.AreEqual(2, fn1.PhoneNumbers.Count);
+                Assert.AreEqual("15678", fn1.PhoneNumbers.First().Number);
+            }
+        }
+
+        [TestMethod]
+        public void SingleInclude_LoadsChildrenSortAndFilter()
+        {
+            SetupSmallTestSet();
+            using (var db = Context.Sql())
+            {
+                var result = db.Contacts.IncludeEFU(db, x => x.PhoneNumbers.Where(n => n.Number == "10134").OrderBy(p => p.ContactId).ThenBy(p => p.Number)).ToList();
+                var fn1 = result.First(x => x.FirstName == "FN1");
+
+                Assert.AreEqual(1, fn1.PhoneNumbers.Count);
+                Assert.AreEqual("10134", fn1.PhoneNumbers.First().Number);
+            }
+
+            using (var db = Context.Sql())
+            {
+                var result = db.Contacts.IncludeEFU(db, x => x.PhoneNumbers.Where(n => n.Number == "10134").OrderBy(p => p.ContactId).ThenByDescending(p => p.Number)).ToList();
+                var fn1 = result.First(x => x.FirstName == "FN1");
+
+                Assert.AreEqual(1, fn1.PhoneNumbers.Count);
+                Assert.AreEqual("10134", fn1.PhoneNumbers.First().Number);
+            }
+        }
+
+        [TestMethod]
+        public void SingleInclude_LoadsChildrenFiltered()
+        {
+            SetupSmallTestSet();
+            using (var db = Context.Sql())
+            {
+                var result = db.Contacts.IncludeEFU(db, x => x.PhoneNumbers.Where(p => p.Number == "10134")).ToList();
+                var fn1 = result.First(x => x.FirstName == "FN1");
+
+                Assert.AreEqual(1, fn1.PhoneNumbers.Count);
+                Assert.AreEqual("10134", fn1.PhoneNumbers.First().Number);
+            }
+        }
+
+        private static void SetupSmallTestSet()
+        {
+            using (var db = Context.Sql())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.ForceDelete();
+                }
+                db.Database.Create();
+                CreateSmallTestSet(db);
             }
         }
 
