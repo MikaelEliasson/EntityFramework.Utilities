@@ -79,6 +79,34 @@ namespace Tests
         }
 
         [TestMethod]
+        public void SingleInclude_WithFirst_LoadsChildren()
+        {
+            SetupSmallTestSet();
+            using (var db = Context.Sql())
+            {
+                var result = db.Contacts.IncludeEFU(db, x => x.PhoneNumbers).OrderBy(x => x.FirstName).First();
+                Assert.AreEqual("FN1", result.FirstName);
+
+                Assert.AreEqual(2, result.PhoneNumbers.Count);
+                Assert.AreEqual('1', result.PhoneNumbers.First().Number.First());
+            }
+        }
+
+        [TestMethod]
+        public void SingleInclude_WithTake_LoadsChildren()
+        {
+            SetupSmallTestSet();
+            using (var db = Context.Sql())
+            {
+                var result = db.Contacts.IncludeEFU(db, x => x.PhoneNumbers).OrderBy(x => x.FirstName).Take(1).ToList().Single();
+                Assert.AreEqual("FN1", result.FirstName);
+
+                Assert.AreEqual(2, result.PhoneNumbers.Count);
+                Assert.AreEqual('1', result.PhoneNumbers.First().Number.First());
+            }
+        }
+
+        [TestMethod]
         public void DoubleIncludes_LoadsChildren()
         {
             SetupSmallTestSet();
@@ -386,6 +414,46 @@ namespace Tests
 
                 Assert.AreEqual(1, fn1.PhoneNumbers.Count);
                 Assert.AreEqual("10134", fn1.PhoneNumbers.First().Number);
+            }
+        }
+
+
+        [TestMethod]
+        public void SingleInclude_RefactoredWhereAsStaticMethod()
+        {
+            SetupSmallTestSet();
+            using (var db = Context.Sql())
+            {
+                var result = Queries.FilterByName(db.Contacts.IncludeEFU(db, x => x.PhoneNumbers), "FN1").ToList();
+                var fn1 = result.First(x => x.FirstName == "FN1");
+
+                Assert.AreEqual(2, fn1.PhoneNumbers.Count);
+            }
+        }
+
+        [TestMethod]
+        public void SingleInclude_RefactoredWhereAsExtensionMethod()
+        {
+            SetupSmallTestSet();
+            using (var db = Context.Sql())
+            {
+                var result = db.Contacts.IncludeEFU(db, x => x.PhoneNumbers).FilterByAsExtensionMethod("FN1").ToList();
+                var fn1 = result.First(x => x.FirstName == "FN1");
+
+                Assert.AreEqual(2, fn1.PhoneNumbers.Count);
+            }
+        }
+
+        [TestMethod]
+        public void SingleInclude_RefactoredWhereAsStaticMethod_WithIQueryableAsSecondArgument()
+        {
+            SetupSmallTestSet();
+            using (var db = Context.Sql())
+            {
+                var result = Queries.FilterByNameInReversedOrder("FN1", db.Contacts.IncludeEFU(db, x => x.PhoneNumbers)).ToList();
+                var fn1 = result.First(x => x.FirstName == "FN1");
+
+                Assert.AreEqual(2, fn1.PhoneNumbers.Count);
             }
         }
 
