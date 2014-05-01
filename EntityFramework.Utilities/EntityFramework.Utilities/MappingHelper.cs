@@ -44,11 +44,16 @@ namespace EntityFramework.Utilities
         /// The name of the table the entity is mapped to
         /// </summary>
         public string TableName { get; set; }
+        /// <summary>
+        /// The schema of the table the entity is mapped to
+        /// </summary>
+        public string Schema { get; set; }
 
         /// <summary>
         /// Details of the property-to-column mapping
         /// </summary>
         public List<PropertyMapping> PropertyMappings { get; set; }
+
     }
 
     /// <summary>
@@ -130,10 +135,12 @@ namespace EntityFramework.Utilities
 
                     // Find the table that this fragment maps to
                     var storeset = mapping.Attribute("StoreEntitySet").Value;
-                    tableMapping.TableName = (string)storeContainer
+                    var store = storeContainer
                         .BaseEntitySets.OfType<EntitySet>()
-                        .Single(s => s.Name == storeset)
-                        .MetadataProperties["Table"].Value;
+                        .Single(s => s.Name == storeset);
+
+                    tableMapping.TableName = (string)store.MetadataProperties["Table"].Value;
+                    tableMapping.Schema = (string)store.MetadataProperties["Schema"].Value;
 
                     // Find the property-to-column mappings
                     var propertyMappings = mapping
