@@ -94,7 +94,7 @@ There are some special things to keep in mind when using EFUtilities. Here is a 
 
 - The bulk insert should be stable but remember if you use database assigned id's it will NOT return these like normal EF inserts do.
 - Update and Delete is quite "hacky". They work by pretending it was a regular where and take the generated sql (not hitting db) then altering this sql for update or delete. If you use joins that might not work. It will work for simple things but if you are doing complex stuff it might not be powerful enough. 
-- All 3 methods works in a way that doesn't really align with the DbContext, things are saved before SaveChanges are called, new ids are not returned and changes aren't synced to entities loaded into the context. This is the reason the methods are placed on ``EFBatchOperation``, to make sure it's clear this is working outside the normal conventions.
+- All 3 methods works in a way that doesn't really align with the DbContext, things are saved before SaveChanges are called, validation is not done, new ids are not returned and changes aren't synced to entities loaded into the context. This is the reason the methods are placed on ``EFBatchOperation``, to make sure it's clear this is working outside the normal conventions.
 - Because particulary Update/Delete are implemented using hacks that depend on the generated sql from EF I would encourage you to add integrations tests whenever you use these methods. Actually I would encourage you to always do that but that is another story. With integrations tests you will be warned if an EF update break EFUtilities and avoid any unpleasant suprises in production. 
 
 ## Performance
