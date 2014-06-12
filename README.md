@@ -89,6 +89,13 @@ The modifications you can do should be what EF can support in it's queries. For 
 
 To incrememt the day one step. This method should be able to handle any renamed columns but the pitfall here is that this works internally by running the modifier through a where clause to get the SQL and than this where clause is transformed to a set clause. The rules for set and where are different so this might not always be valid. This is the most fragile of the methods but you can always test and if it doesn't work open an issue on github and it might get fixed. 
 
+## Caveats and overall design decisions
+There are some special things to keep in mind when using EFUtilities. Here is a list.
+
+- The bulk insert should be stable but remember if you use database assigned id's it will NOT return these like normal EF inserts do.
+- Update and Delete is quite "hacky". They work by pretending it was a regular where and take the generated sql (not hitting db) then altering this sql for update or delete. If you use joins that might not work. It will work for simple things but if you are doing complex stuff it might not be powerful enough. 
+- All 3 methods works in a way that doesn't really align with the DbContext, things are saved before SaveChanges are called, new ids are not returned and changes aren't synced to entities loaded into the context. This is the reason the methods are placed on ``EFBatchOperation``, to make sure it's clear this is working outside the normal conventions.
+- Because particulary Update/Delete are implemented using hacks that depend on the generated sql from EF I would encourage you to add integrations tests whenever you use these methods. Actually I would encourage you to always do that but that is another story. With integrations tests you will be warned if an EF update break EFUtilities and avoid any unpleasant suprises in production. 
 
 ## Performance
 These methods are all about performance. Measuring performance should always be done in your context but some simple numbers might give you a hint.
