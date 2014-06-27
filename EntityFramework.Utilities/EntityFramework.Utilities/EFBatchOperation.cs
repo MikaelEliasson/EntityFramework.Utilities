@@ -73,7 +73,7 @@ namespace EntityFramework.Utilities
 
                 var properties = tableMapping.PropertyMappings.Select(p => new ColumnMapping { NameInDatabase = p.ColumnName, NameOnObject = p.PropertyName }).ToList();
 
-                provider.InsertItems(items, tableMapping.TableName, properties, con.StoreConnection);
+                provider.InsertItems(items, tableMapping.Schema, tableMapping.TableName, properties, con.StoreConnection);
             }
             else
             {
