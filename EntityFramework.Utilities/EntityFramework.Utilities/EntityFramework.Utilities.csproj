@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="ColumnMapping.cs" />
     <Compile Include="Configuration.cs" />
+    <Compile Include="ContextExtensionMethods.cs" />
     <Compile Include="DatabaseExtensionMethods.cs" />
     <Compile Include="EFBatchOperation.cs" />
     <Compile Include="EFDataReader.cs" />

@@ -417,7 +417,6 @@ namespace Tests
             }
         }
 
-
         [TestMethod]
         public void SingleInclude_RefactoredWhereAsStaticMethod()
         {

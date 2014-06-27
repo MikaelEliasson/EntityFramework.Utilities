@@ -73,6 +73,7 @@
   <ItemGroup>
     <Compile Include="ConnectionStringReader.cs" />
     <Compile Include="ConnectionStrings.cs" />
+    <Compile Include="AttachAndModifyTest.cs" />
     <Compile Include="FakeDomain\Contact.cs" />
     <Compile Include="FakeDomain\Email.cs" />
     <Compile Include="FakeDomain\PhoneNumber.cs" />
