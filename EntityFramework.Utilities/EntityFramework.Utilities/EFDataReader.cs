@@ -7,7 +7,6 @@ using System.Reflection;
 
 namespace EntityFramework.Utilities
 {
-
     public class EFDataReader<T> : DbDataReader
     {
         public IEnumerable<T> Items { get; set; }

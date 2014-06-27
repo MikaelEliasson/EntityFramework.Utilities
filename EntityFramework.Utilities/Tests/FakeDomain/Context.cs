@@ -17,12 +17,14 @@ namespace Tests.FakeDomain
         }
 
         public DbSet<BlogPost> BlogPosts { get; set; }
+        public DbSet<Contact> Contacts { get; set; }
+        public DbSet<PhoneNumber> PhoneNumbers { get; set; }
+        public DbSet<Email> Emails { get; set; }
         public DbSet<Comment> Comments { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<BlogPost>().Property(x => x.Created);
             modelBuilder.ComplexType<AuthorInfo>();
             modelBuilder.ComplexType<Address>();
         }

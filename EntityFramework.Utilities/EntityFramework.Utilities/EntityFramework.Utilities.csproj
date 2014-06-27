@@ -49,10 +49,16 @@
   <ItemGroup>
     <Compile Include="ColumnMapping.cs" />
     <Compile Include="Configuration.cs" />
+    <Compile Include="ContextExtensionMethods.cs" />
+    <Compile Include="DatabaseExtensionMethods.cs" />
     <Compile Include="EFBatchOperation.cs" />
     <Compile Include="EFDataReader.cs" />
+    <Compile Include="EFQueryHelpers.cs" />
+    <Compile Include="EFUQueryable.cs" />
+    <Compile Include="EFUQueryProvider.cs" />
     <Compile Include="ExpressionHelper.cs" />
     <Compile Include="Fallbacks.cs" />
+    <Compile Include="IIncludeContainer.cs" />
     <Compile Include="IQueryProvider.cs" />
     <Compile Include="MappingHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
