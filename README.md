@@ -38,7 +38,79 @@ Any package from 0.2.0 and up should work.
 
 Nuget package https://www.nuget.org/packages/EFUtilities/ 
 
-## Examples
+## Utility methods 
+
+These methods are small helpers that make certain things easier. Most of them work against context so they should be provider independent. It will be stated when this is not the case.
+
+### Update single values on an entity
+
+REQUIRES: using EntityFramework.Utilities;
+
+```c#
+db.AttachAndModify(item).Set(x => x.Property, "NewValue")
+```
+
+A simpler API for working with disconnected entities and only updating single values. This is useful if you want to update a value on an entity without roundtripping the database. A typical usecase could be to update the number of reads of a blogpost. With this API it would look like this
+
+```c#
+using (var db = Context.Sql())
+ {
+      db.AttachAndModify(new BlogPost { ID = postId }).Set(x => x.Reads, 10);
+      db.SaveChanges();
+}
+```
+The Set method is chainable so you could fluently add more properties to update.
+
+This would send this single command to the database:
+```
+exec sp_executesql N'UPDATE [dbo].[BlogPosts]
+SET [Reads] = @0
+WHERE ([ID] = @1)
+',N'@0 int,@1 int',@0=10,@1=1
+```
+
+### IncludeEFU (A significantly faster include)
+
+REQUIRES: using EntityFramework.Utilities;
+
+The standard EF Include is really really slow to use. They reason is that it cross joins the child records against the parent which means you load a significant amount of duplicate data. This means more data to transfer, more data to parse, more memory etc etc. 
+
+Include EFU on the other hand runs two parallel queries and stitch the data toghether in memory. For more information on the problem and numbers see http://mikee.se/Archive.aspx/Details/entity_framework_pitfalls,_include_20140101
+
+A very basic query:
+
+```c#
+var result = db.Contacts
+.IncludeEFU(db, c => c.PhoneNumbers)
+.ToList();
+```
+
+It's also possible to sort and filter the child collections
+
+```c#
+var result = db.Contacts
+.IncludeEFU(db, x => x.PhoneNumbers
+    .Where(n => n.Number == "10134")
+    .OrderBy(p => p.ContactId)
+    .ThenByDescending(p => p.Number))
+.ToList();
+```
+
+VERY IMPORTANT: The plan was to add support for nested collections and projections but it seems like EF7 will have this problem fixed in the core so I dropped that functionality (it was hard to get right). What works right now is that you can include one or more child collections but only on the first level. 
+
+Also it's important to know that the queries are run AsNoTracking(). If you use this method you are after read performance so you shouldn't need the tracking. If you might need to update some of the entities I suggest you just attach them back to the context.
+
+### db.Database.ForceDelete()
+
+REQUIRES: using EntityFramework.Utilities;
+
+PROVIDER DEPENDENT: This methods uses raw sql to drop connections so only works against sql server
+
+Drops the mssql database even if it has connections open. Solves the problem when you are recreating the database in your tests and Management Studio has an open connection that earlier prevented dropping the database. Super useful for testscenarios where you recreate the DB for each test but still need to debug with management studio.
+
+## Batch operations
+
+These methods all work outside the normal EF pipeline and are located on the EFBatchOperation class. The design decision behind this choice is to make it clear you are NOT working against the context when using these methods. That's means change tracking, and 2nd level cache or validation will NOT be run. This is for pure performance and nothing less. These methods are also highly provider dependent. Right now the only existing provider is for Sql Server but it should be easy to add others.
 
 ### Delete by query
 
