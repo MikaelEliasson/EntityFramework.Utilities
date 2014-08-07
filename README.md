@@ -23,7 +23,7 @@ Here is a small extract from the performance section later in the document.
 
 ## Reporting bugs and feature requests
 
-You can do that by preferebly creating an issue here on GitHub or chat me up on twitter
+You can do that by preferebly creating an issue here on GitHub or chat me up on twitter @MikaelEliasson
 
 ## Installing
 
