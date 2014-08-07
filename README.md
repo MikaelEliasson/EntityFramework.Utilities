@@ -21,6 +21,9 @@ Here is a small extract from the performance section later in the document.
                delete all entities with a: 250ms
                delete all entities: 5895ms
 
+## Reporting bugs and feature requests
+
+You can do that by preferebly creating an issue here on GitHub or chat me up on twitter
 
 ## Installing
 
