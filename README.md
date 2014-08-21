@@ -56,7 +56,7 @@ db.AttachAndModify(item).Set(x => x.Property, "NewValue")
 A simpler API for working with disconnected entities and only updating single values. This is useful if you want to update a value on an entity without roundtripping the database. A typical usecase could be to update the number of reads of a blogpost. With this API it would look like this
 
 ```c#
-using (var db = Context.Sql())
+using (var db = new YourDbContext())
  {
       db.AttachAndModify(new BlogPost { ID = postId }).Set(x => x.Reads, 10);
       db.SaveChanges();
@@ -134,7 +134,7 @@ var count = EFBatchOperation.For(db, db.BlogPosts).Where(b => b.Created < upper 
 Allows you to insert many entities in a very performant way instead of adding them one by one as you normally would do with EF. The benefit is superior performance, the disadvantage is that EF will no longer validate any contraits for you and you will not get the ids back if they are store generated. 
 
 ```c#
-            using (var db = Context.Sql())
+            using (var db = new YourDbContext())
             {
                 EFBatchOperation.For(db, db.BlogPosts).InsertAll(list);
             }
@@ -152,7 +152,7 @@ SqlBulkCopy is used under the covers if you are running against SqlServer. If yo
 Let you update many entities in one sql query instead of loading them into memory and, modifing them and saving back to db.
 
 ```c#
-            using (var db = new Context())
+            using (var db = new YourDbContext())
             {
                 EFBatchOperation.For(db, db.Comments).Where(x => x.Text == "a").Update(x => x.Reads, x => x.Reads + 1);
             }
