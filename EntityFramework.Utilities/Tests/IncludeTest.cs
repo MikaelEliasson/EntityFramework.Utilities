@@ -475,6 +475,7 @@ namespace Tests
             {
                 FirstName = "FN1",
                 LastName = "LN1",
+                Title = "Director",
                 Id = Guid.NewGuid(),
                 BirthDate = DateTime.Today,
                 PhoneNumbers = new List<PhoneNumber>(){
@@ -492,6 +493,7 @@ namespace Tests
             {
                 FirstName = "FN2",
                 LastName = "LN2",
+                Title = "Associate",
                 Id = Guid.NewGuid(),
                 BirthDate = DateTime.Today,
                 PhoneNumbers = new List<PhoneNumber>(){
@@ -514,6 +516,7 @@ namespace Tests
             {
                 FirstName = "FN3",
                 LastName = "LN3",
+                Title = "Vice President",
                 Id = Guid.NewGuid(),
                 BirthDate = DateTime.Today,
                 Emails = new List<Email>()
