@@ -4,12 +4,84 @@ using EntityFramework.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.FakeDomain;
 using Tests.FakeDomain.Models;
+using System;
 
 namespace Tests
 {
     [TestClass]
     public class InsertTests 
     {
+        [TestMethod]
+        public void InsertAll_InsertItems_WithTypeHierarchy()
+        {
+            using (var db = Context.Sql())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.Delete();
+                }
+                db.Database.Create();
+
+                List<Contact> people = new List<Contact>();
+                people.Add(new Contact
+                {
+                    FirstName = "FN1",
+                    LastName = "LN1",
+                    Title = "Director",
+                    Id = Guid.NewGuid(),
+                    BirthDate = DateTime.Today,
+                    PhoneNumbers = new List<PhoneNumber>(){
+                       new PhoneNumber{
+                           Id = Guid.NewGuid(),
+                           Number = "10134"
+                       },
+                       new PhoneNumber{
+                           Id = Guid.NewGuid(),
+                           Number = "15678"
+                       },
+                    }
+                });
+                people.Add(new Contact
+                {
+                    FirstName = "FN2",
+                    LastName = "LN2",
+                    Title = "Associate",
+                    Id = Guid.NewGuid(),
+                    BirthDate = DateTime.Today,
+                    PhoneNumbers = new List<PhoneNumber>(){
+                       new PhoneNumber{
+                           Id = Guid.NewGuid(),
+                           Number = "20134"
+                       },
+                       new PhoneNumber{
+                           Id = Guid.NewGuid(),
+                           Number = "25678"
+                       },
+                    },
+                    Emails = new List<Email>()
+                {
+                    new Email{Id = Guid.NewGuid(), Address = "m21@mail.com" },
+                    new Email{Id = Guid.NewGuid(), Address = "m22@mail.com" },
+                }
+                });
+                people.Add(new Contact
+                {
+                    FirstName = "FN3",
+                    LastName = "LN3",
+                    Title = "Vice President",
+                    Id = Guid.NewGuid(),
+                    BirthDate = DateTime.Today,
+                    Emails = new List<Email>()
+                {
+                    new Email{Id = Guid.NewGuid(), Address = "m31@mail.com" },
+                    new Email{Id = Guid.NewGuid(), Address = "m32@mail.com" },
+                }
+                });
+
+                EFBatchOperation.For(db, db.People).InsertAll(people);
+            }
+        }
+
         [TestMethod]
         public void InsertAll_InsertsItems()
         {

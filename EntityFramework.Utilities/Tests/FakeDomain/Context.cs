@@ -17,6 +17,7 @@ namespace Tests.FakeDomain
         }
 
         public DbSet<BlogPost> BlogPosts { get; set; }
+        public DbSet<Person> People { get; set; }
         public DbSet<Contact> Contacts { get; set; }
         public DbSet<PhoneNumber> PhoneNumbers { get; set; }
         public DbSet<Email> Emails { get; set; }
@@ -27,6 +28,10 @@ namespace Tests.FakeDomain
             base.OnModelCreating(modelBuilder);
             modelBuilder.ComplexType<AuthorInfo>();
             modelBuilder.ComplexType<Address>();
+
+            //Table per Type Hierarchy setup
+            modelBuilder.Entity<Person>().ToTable("Person");
+            modelBuilder.Entity<Contact>().ToTable("Contact");
         }
 
         public static Context Sql()

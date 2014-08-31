@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Core.Metadata.Edm;
+using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Linq.Expressions;
@@ -45,13 +46,14 @@ namespace EntityFramework.Utilities
             var e = new IncludeExecuter<T>
             {
                 ElementType = typeof(TChild),
-                SingleItemLoader = (parent) => {
+                SingleItemLoader = (parent) =>
+                {
                     if (parent == null)
                     {
                         return;
                     }
                     var children = octx.CreateObjectSet<TChild>();
-                    var lambdaExpression = GetRootEntityToChildCollectionSelector<T,TChild>(cSpaceType);
+                    var lambdaExpression = GetRootEntityToChildCollectionSelector<T, TChild>(cSpaceType);
 
                     var q = ApplyChildCollectionModifiers<TChild>(children, childCollectionModifiers);
 
@@ -64,10 +66,18 @@ namespace EntityFramework.Utilities
                     q = q.AsNoTracking().Where(where);
 
                     setter((T)parent, q.ToList());
-                }, 
+                },
                 Loader = (rootFilters, parents) =>
                 {
-                    var set = octx.CreateObjectSet<T>();
+                    var baseType = typeof(T).BaseType ?? typeof(T);
+                    
+                    dynamic dynamicSet = octx.GetType()
+                                    .GetMethod("CreateObjectSet", new Type[] { })
+                                    .MakeGenericMethod(baseType)
+                                    .Invoke(octx, new Object[] { });
+
+                    var set = dynamicSet.OfType<T>() as ObjectQuery<T>;
+
                     IQueryable<T> q = set;
                     foreach (var item in rootFilters)
                     {
@@ -77,7 +87,7 @@ namespace EntityFramework.Utilities
                         q = q.Provider.CreateQuery<T>(newMethods);
                     }
 
-                    var lambdaExpression = GetRootEntityToChildCollectionSelector<T,TChild>(cSpaceType);
+                    var lambdaExpression = GetRootEntityToChildCollectionSelector<T, TChild>(cSpaceType);
 
                     var childQ = q.SelectMany(lambdaExpression);
                     childQ = ApplyChildCollectionModifiers<TChild>(childQ, childCollectionModifiers);

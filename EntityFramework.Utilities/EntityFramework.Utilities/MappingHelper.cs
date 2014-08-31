@@ -121,7 +121,7 @@ namespace EntityFramework.Utilities
                     .Descendants()
                     .Single(e =>
                         e.Name.LocalName == "EntityTypeMapping"
-                        && e.Attribute("TypeName").Value == set.ElementType.FullName)
+                        && (e.Attribute("TypeName").Value == set.ElementType.FullName || e.Attribute("TypeName").Value == string.Format("IsTypeOf({0})", set.ElementType.FullName)))
                     .Descendants()
                     .Where(e => e.Name.LocalName == "MappingFragment");
 

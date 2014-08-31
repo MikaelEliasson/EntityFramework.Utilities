@@ -5,12 +5,9 @@ using System.Text;
 
 namespace Tests.FakeDomain
 {
-    public class Contact
+    public class Contact : Person
     {
-        public Guid Id { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public DateTime BirthDate { get; set; }
+        public string Title { get; set; }
         public ICollection<PhoneNumber> PhoneNumbers { get; set; }
         public ICollection<Email> Emails { get; set; }
     }
