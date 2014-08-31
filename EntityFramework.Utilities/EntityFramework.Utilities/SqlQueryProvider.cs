@@ -50,7 +50,12 @@ namespace EntityFramework.Utilities
         {
             using (var reader = new EFDataReader<T>(items, properties))
             {
-                using (SqlBulkCopy copy = new SqlBulkCopy(storeConnection.ConnectionString, SqlBulkCopyOptions.Default))
+                var con = storeConnection as SqlConnection;
+                if (con.State != System.Data.ConnectionState.Open)
+                {
+                    con.Open();
+                }
+                using (SqlBulkCopy copy = new SqlBulkCopy(con))
                 {
                     copy.BatchSize = Math.Min(reader.RecordsAffected, 15000); //default batch size
                     if (!string.IsNullOrWhiteSpace(schema))
