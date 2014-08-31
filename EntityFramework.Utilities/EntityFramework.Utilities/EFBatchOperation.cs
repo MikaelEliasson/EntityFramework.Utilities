@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
 using System.Data.Entity;
 using System.Data.Entity.Core.EntityClient;
 using System.Data.Entity.Core.Objects;
@@ -13,7 +15,12 @@ namespace EntityFramework.Utilities
 
     public interface IEFBatchOperationBase<TContext, T> where T : class
     {
-        void InsertAll(IEnumerable<T> items);
+        /// <summary>
+        /// Bulk insert all items if the Provider supports it. Otherwise it will use the default insert unless Configuration.DisableDefaultFallback is set to true in which case it would throw an exception.
+        /// </summary>
+        /// <param name="items">The items to insert</param>
+        /// <param name="connection">The DbConnection to use for the insert. Only needed when for example a profiler wraps the connection. Then you need to provide a connection of the type the provider use.</param>
+        void InsertAll(IEnumerable<T> items, DbConnection connection = null);
         IEFBatchOperationFiltered<TContext, T> Where(Expression<Func<T, bool>> predicate);
     }
 
@@ -54,7 +61,12 @@ namespace EntityFramework.Utilities
             return new EFBatchOperation<TContext, T>(context, set);
         }
 
-        public void InsertAll(IEnumerable<T> items)
+        /// <summary>
+        /// Bulk insert all items if the Provider supports it. Otherwise it will use the default insert unless Configuration.DisableDefaultFallback is set to true in which case it would throw an exception.
+        /// </summary>
+        /// <param name="items">The items to insert</param>
+        /// <param name="connection">The DbConnection to use for the insert. Only needed when for example a profiler wraps the connection. Then you need to provide a connection of the type the provider use.</param>
+        public void InsertAll(IEnumerable<T> items, DbConnection connection = null)
         {
             var con = context.Connection as EntityConnection;
             if (con == null)
@@ -63,7 +75,9 @@ namespace EntityFramework.Utilities
                 Fallbacks.DefaultInsertAll(context, items);
             }
 
-            var provider = Configuration.Providers.FirstOrDefault(p => p.CanHandle(con.StoreConnection));
+            var connectionToUse = connection ?? con.StoreConnection;
+
+            var provider = Configuration.Providers.FirstOrDefault(p => p.CanHandle(connectionToUse));
             if (provider != null && provider.CanInsert)
             {
 
@@ -73,11 +87,11 @@ namespace EntityFramework.Utilities
 
                 var properties = tableMapping.PropertyMappings.Select(p => new ColumnMapping { NameInDatabase = p.ColumnName, NameOnObject = p.PropertyName }).ToList();
 
-                provider.InsertItems(items, tableMapping.Schema, tableMapping.TableName, properties, con.StoreConnection);
+                provider.InsertItems(items, tableMapping.Schema, tableMapping.TableName, properties, connectionToUse);
             }
             else
             {
-                Configuration.Log("Found provider: " + (provider == null ? "[]" : provider.GetType().Name) + " for " + con.StoreConnection.GetType().Name);
+                Configuration.Log("Found provider: " + (provider == null ? "[]" : provider.GetType().Name) + " for " + connectionToUse.GetType().Name);
                 Fallbacks.DefaultInsertAll(context, items);
             }
         }

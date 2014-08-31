@@ -37,6 +37,31 @@ namespace Tests
         }
 
         [TestMethod]
+        public void InsertAll_WithExplicitConnection_InsertsItems()
+        {
+            using (var db = Context.Sql())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.Delete();
+                }
+                db.Database.Create();
+
+                var list = new List<BlogPost>(){
+                    BlogPost.Create("T1"),
+                    BlogPost.Create("T2"),
+                    BlogPost.Create("T3")
+                };
+                EFBatchOperation.For(db, db.BlogPosts).InsertAll(list, db.Database.Connection);
+            }
+
+            using (var db = Context.Sql())
+            {
+                Assert.AreEqual(3, db.BlogPosts.Count());
+            }
+        }
+
+        [TestMethod]
         public void InsertAll_WrongColumnOrder_InsertsItems()
         {
             using (var db = new ReorderedContext())
