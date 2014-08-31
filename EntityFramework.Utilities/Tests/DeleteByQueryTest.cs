@@ -9,7 +9,7 @@ using Tests.FakeDomain.Models;
 namespace Tests
 {
     [TestClass]
-    public class DeleteAllTest
+    public class DeleteByQueryTest
     {
         [TestMethod]
         public void DeleteAll_PropertyEquals_DeletesAllMatchesAndNothingElse()

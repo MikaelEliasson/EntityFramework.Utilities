@@ -10,7 +10,7 @@ using Tests.FakeDomain.Models;
 namespace Tests
 {
     [TestClass]
-    public class UpdateAllTest
+    public class UpdateByQueryTest
     {
 
       [TestMethod]
