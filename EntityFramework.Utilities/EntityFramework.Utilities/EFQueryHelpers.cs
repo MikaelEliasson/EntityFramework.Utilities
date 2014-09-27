@@ -69,7 +69,7 @@ namespace EntityFramework.Utilities
                 },
                 Loader = (rootFilters, parents) =>
                 {
-                    var baseType = typeof(T).BaseType ?? typeof(T);
+                    var baseType = typeof(T).BaseType != typeof(object) ? typeof(T).BaseType : typeof(T);
                     
                     dynamic dynamicSet = octx.GetType()
                                     .GetMethod("CreateObjectSet", new Type[] { })
