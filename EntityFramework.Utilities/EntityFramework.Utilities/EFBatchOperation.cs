@@ -20,7 +20,8 @@ namespace EntityFramework.Utilities
         /// </summary>
         /// <param name="items">The items to insert</param>
         /// <param name="connection">The DbConnection to use for the insert. Only needed when for example a profiler wraps the connection. Then you need to provide a connection of the type the provider use.</param>
-        void InsertAll(IEnumerable<T> items, DbConnection connection = null);
+        /// <param name="batchSize">The size of each batch. Default depends on the provider. SqlProvider uses 15000 as default</param>        
+        void InsertAll(IEnumerable<T> items, DbConnection connection = null, int? batchSize = null);
         IEFBatchOperationFiltered<TContext, T> Where(Expression<Func<T, bool>> predicate);
     }
 
@@ -66,7 +67,8 @@ namespace EntityFramework.Utilities
         /// </summary>
         /// <param name="items">The items to insert</param>
         /// <param name="connection">The DbConnection to use for the insert. Only needed when for example a profiler wraps the connection. Then you need to provide a connection of the type the provider use.</param>
-        public void InsertAll(IEnumerable<T> items, DbConnection connection = null)
+        /// <param name="batchSize">The size of each batch. Default depends on the provider. SqlProvider uses 15000 as default</param>
+        public void InsertAll(IEnumerable<T> items, DbConnection connection = null, int? batchSize = null)
         {
             var con = context.Connection as EntityConnection;
             if (con == null)
@@ -87,7 +89,7 @@ namespace EntityFramework.Utilities
 
                 var properties = tableMapping.PropertyMappings.Select(p => new ColumnMapping { NameInDatabase = p.ColumnName, NameOnObject = p.PropertyName }).ToList();
 
-                provider.InsertItems(items, tableMapping.Schema, tableMapping.TableName, properties, connectionToUse);
+                provider.InsertItems(items, tableMapping.Schema, tableMapping.TableName, properties, connectionToUse, batchSize);
             }
             else
             {
