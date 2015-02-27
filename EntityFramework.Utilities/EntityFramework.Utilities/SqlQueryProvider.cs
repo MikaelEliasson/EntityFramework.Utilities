@@ -46,7 +46,7 @@ namespace EntityFramework.Utilities
             return string.Format("UPDATE [{0}].[{1}] SET {2} {3}", predicateQueryInfo.Schema, predicateQueryInfo.Table, updateSql, predicateQueryInfo.WhereSql);
         }
 
-        public void InsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize)
+        public void InsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, DbTransaction transaction)
         {
             using (var reader = new EFDataReader<T>(items, properties))
             {
@@ -55,7 +55,7 @@ namespace EntityFramework.Utilities
                 {
                     con.Open();
                 }
-                using (SqlBulkCopy copy = new SqlBulkCopy(con))
+                using (SqlBulkCopy copy = new SqlBulkCopy(con, SqlBulkCopyOptions.Default, (SqlTransaction)transaction))
                 {
                     copy.BatchSize = Math.Min(reader.RecordsAffected, batchSize ?? 15000); //default batch size
                     if (!string.IsNullOrWhiteSpace(schema))
