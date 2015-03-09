@@ -46,39 +46,6 @@ namespace EntityFramework.Utilities
             return string.Format("UPDATE [{0}].[{1}] SET {2} {3}", predicateQueryInfo.Schema, predicateQueryInfo.Table, updateSql, predicateQueryInfo.WhereSql);
         }
 
-        public void InsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize)
-        {
-            using (var reader = new EFDataReader<T>(items, properties))
-            {
-                var con = storeConnection as SqlConnection;
-                if (con.State != System.Data.ConnectionState.Open)
-                {
-                    con.Open();
-                }
-                using (SqlBulkCopy copy = new SqlBulkCopy(con))
-                {
-                    copy.BatchSize = Math.Min(reader.RecordsAffected, batchSize ?? 15000); //default batch size
-                    if (!string.IsNullOrWhiteSpace(schema))
-                    {
-                        copy.DestinationTableName = string.Format("[{0}].[{1}]", schema, tableName);
-                    }
-                    else
-                    {
-                        copy.DestinationTableName = tableName;
-                    }
-                    
-                    copy.NotifyAfter = 0;
-
-                    foreach (var i in Enumerable.Range(0, reader.FieldCount))
-                    {
-                        copy.ColumnMappings.Add(i, properties[i].NameInDatabase);
-                    }
-                    copy.WriteToServer(reader);
-                    copy.Close();
-                }
-            }
-        }
-
 
         public bool CanHandle(System.Data.Common.DbConnection storeConnection)
         {
@@ -106,5 +73,42 @@ namespace EntityFramework.Utilities
             }
             return queryInfo;
         }
-    }
+
+
+		public void InsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, SqlBulkCopyOptions? options)
+		{
+			using (var reader = new EFDataReader<T>(items, properties))
+			{
+				var con = storeConnection as SqlConnection;
+				var copyOptions = options.HasValue ? options.Value : SqlBulkCopyOptions.Default;
+
+				if (con.State != System.Data.ConnectionState.Open)
+				{
+					con.Open();
+				}
+
+				using (SqlBulkCopy copy = new SqlBulkCopy(con.ConnectionString, copyOptions))
+				{
+					copy.BatchSize = Math.Min(reader.RecordsAffected, batchSize ?? 15000); //default batch size
+					if (!string.IsNullOrWhiteSpace(schema))
+					{
+						copy.DestinationTableName = string.Format("[{0}].[{1}]", schema, tableName);
+					}
+					else
+					{
+						copy.DestinationTableName = tableName;
+					}
+
+					copy.NotifyAfter = 0;
+
+					foreach (var i in Enumerable.Range(0, reader.FieldCount))
+					{
+						copy.ColumnMappings.Add(i, properties[i].NameInDatabase);
+					}
+					copy.WriteToServer(reader);
+					copy.Close();
+				}
+			}
+		}
+	}
 }
