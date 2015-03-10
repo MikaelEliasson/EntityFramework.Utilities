@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.FakeDomain;
 using Tests.FakeDomain.Models;
 using System;
+using System.Data.SqlClient;
 
 namespace Tests
 {
@@ -262,5 +263,59 @@ namespace Tests
                 Assert.AreEqual(2, db.Comments.Count(c => c.PostId == postId));
             }
         }
+
+		[TestMethod]
+		public void InsertAll_WithExplicitBulkCopyOptions_InsertsItems()
+		{
+			using (var db = Context.Sql())
+			{
+				if (db.Database.Exists())
+				{
+					db.Database.Delete();
+				}
+
+				db.Database.Create();
+
+				var list = new List<BlogPost>(){
+                    BlogPost.Create("T1"),
+                    BlogPost.Create("T2"),
+                    BlogPost.Create("T3")
+                };
+
+				EFBatchOperation.For(db, db.BlogPosts).InsertAll(list, null, null, SqlBulkCopyOptions.FireTriggers);
+			}
+
+			using (var db = Context.Sql())
+			{
+				Assert.AreEqual(3, db.BlogPosts.Count());
+			}
+		}
+
+		[TestMethod]
+		public void InsertAll_WithExplicitNullParameters_InsertsItems()
+		{
+			using (var db = Context.Sql())
+			{
+				if (db.Database.Exists())
+				{
+					db.Database.Delete();
+				}
+
+				db.Database.Create();
+
+				var list = new List<BlogPost>(){
+                    BlogPost.Create("T1"),
+                    BlogPost.Create("T2"),
+                    BlogPost.Create("T3")
+                };
+
+				EFBatchOperation.For(db, db.BlogPosts).InsertAll(list, null, null, null);
+			}
+
+			using (var db = Context.Sql())
+			{
+				Assert.AreEqual(3, db.BlogPosts.Count());
+			}
+		}
     }
 }
