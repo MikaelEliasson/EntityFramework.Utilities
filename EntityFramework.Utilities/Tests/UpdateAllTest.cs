@@ -70,6 +70,41 @@ namespace Tests
               Assert.AreEqual(20, post.Reads);
           }
       }
+      private int Get20()
+      {
+          return 20;
+      }
+      [TestMethod]
+      public void UpdateAll_SetFromMethod()
+      {
+          SetupBasePosts();
+
+          int count;
+          using (var db = Context.Sql())
+          {
+              count = EFBatchOperation.For(db, db.BlogPosts).Where(b => b.Title == "T2").Update(b => b.Reads, b => Get20());
+              Assert.AreEqual(1, count);
+          }
+
+          using (var db = Context.Sql())
+          {
+              var post = db.BlogPosts.First(p => p.Title == "T2");
+              Assert.AreEqual(20, post.Reads);
+          }
+      }
+
+      [TestMethod]
+      public void UpdateAll_SetFromProperty()
+      {
+          SetupBasePosts();
+
+          int count;
+          using (var db = Context.Sql())
+          {
+              count = EFBatchOperation.For(db, db.BlogPosts).Where(b => b.Created == DateTime.Now.AddDays(2)).Update(b => b.Created, b => DateTime.Now);
+              Assert.AreEqual(1, count);
+          }
+      }
 
       [TestMethod]
       public void UpdateAll_ConcatStringValue()
