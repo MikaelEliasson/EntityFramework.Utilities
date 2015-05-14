@@ -140,6 +140,12 @@ namespace EntityFramework.Utilities
                 childCollectionModifiers.Add(mce);
                 temp = mce.Arguments[0];
             }
+            //This loop is for VB, See: https://github.com/MikaelEliasson/EntityFramework.Utilities/issues/29
+            while (temp is UnaryExpression)
+            {
+                var ue = temp as UnaryExpression;
+                temp = ue.Operand;
+            }
             childCollectionModifiers.Reverse(); //We parse from right to left so reverse it
             if (!(temp is MemberExpression))
             {
