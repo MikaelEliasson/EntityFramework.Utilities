@@ -149,7 +149,7 @@ namespace EntityFramework.Utilities
                 };
                 var mappingToLookAt = mapping.EntityTypeMappings.FirstOrDefault(m => m.IsHierarchyMapping) ?? mapping.EntityTypeMappings.First();
                 tableMapping.Schema = mappingToLookAt.Fragments[0].StoreEntitySet.Schema;
-                tableMapping.TableName = mappingToLookAt.Fragments[0].StoreEntitySet.Table;
+                tableMapping.TableName = mappingToLookAt.Fragments[0].StoreEntitySet.Table ?? mappingToLookAt.Fragments[0].StoreEntitySet.Name;
                 typeMapping.TableMappings.Add(tableMapping);
 
                 Action<Type, System.Data.Entity.Core.Mapping.PropertyMapping, string> recurse = null;
