@@ -184,7 +184,7 @@ namespace Tests
         public void InsertAll_NoProvider_UsesDefaultInsert()
         {
             string fallbackText = null;
-
+            Configuration.DisableDefaultFallback = false;
             Configuration.Log = str => fallbackText = str;
 
             using (var db = Context.SqlCe())

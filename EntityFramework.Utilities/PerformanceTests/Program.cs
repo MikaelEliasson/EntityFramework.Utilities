@@ -25,7 +25,7 @@ namespace PerformanceTests
             BatchIteration(50000);
             //NormalIteration(50000);
             BatchIteration(100000);
-            //NormalIteration(100000);
+            NormalIteration(100000);
         }
 
 
@@ -61,7 +61,25 @@ namespace PerformanceTests
                     item.Reads++;
                 }
                 db.SaveChanges();
+                stop.Stop();
                 Console.WriteLine("Update all entities with a: " + stop.ElapsedMilliseconds + "ms");
+            }
+
+            using (var db = new Context())
+            {
+                db.Configuration.AutoDetectChangesEnabled = true;
+                db.Configuration.ValidateOnSaveEnabled = false;
+                var toUpdate = db.Comments.ToList();
+                var rand = new Random();
+                foreach (var item in toUpdate)
+                {
+                    item.Reads = rand.Next(0, 9999999);
+                }
+                stop.Restart();
+                db.SaveChanges();
+                
+                stop.Stop();
+                Console.WriteLine("Update all with a random read: " + stop.ElapsedMilliseconds + "ms");
             }
 
             using (var db = new Context())
@@ -114,6 +132,17 @@ namespace PerformanceTests
                 EFBatchOperation.For(db, db.Comments).Where(x => x.Text == "a").Update(x => x.Reads, x => x.Reads + 1);
                 stop.Stop();
                 Console.WriteLine("Update all entities with a: " + stop.ElapsedMilliseconds + "ms");
+
+                var commentsFromDb = db.Comments.AsNoTracking().ToList();
+                var rand = new Random();
+                foreach (var item in commentsFromDb)
+                {
+                    item.Reads = rand.Next(0, 9999999);
+                }
+                stop.Restart();
+                EFBatchOperation.For(db, db.Comments).UpdateAll(commentsFromDb, x => x.ColumnsToUpdate(c => c.Reads));
+                stop.Stop();
+                Console.WriteLine("Bulk update all with a random read: " + stop.ElapsedMilliseconds + "ms");
 
                 stop.Restart();
                 EFBatchOperation.For(db, db.Comments).Where(x => x.Text == "a").Delete();

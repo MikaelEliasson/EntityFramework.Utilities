@@ -60,8 +60,6 @@ namespace EntityFramework.Utilities
         /// Null if not TPH
         /// </summary>
         public TPHConfiguration TPHConfiguration { get; set; }
-
-
     }
 
     public class TPHConfiguration
@@ -90,6 +88,10 @@ namespace EntityFramework.Utilities
         /// Used when we have TPH to exclude entities
         /// </summary>
         public Type ForEntityType { get; set; }
+
+        public string DataType { get; set; }
+
+        public bool IsPrimaryKey { get; set; }
     }
 
     /// <summary>
@@ -145,7 +147,7 @@ namespace EntityFramework.Utilities
 
                 var tableMapping = new TableMapping
                 {
-                    PropertyMappings = new List<PropertyMapping>()
+                    PropertyMappings = new List<PropertyMapping>(),
                 };
                 var mappingToLookAt = mapping.EntityTypeMappings.FirstOrDefault(m => m.IsHierarchyMapping) ?? mapping.EntityTypeMappings.First();
                 tableMapping.Schema = mappingToLookAt.Fragments[0].StoreEntitySet.Schema;
@@ -169,6 +171,7 @@ namespace EntityFramework.Utilities
                         tableMapping.PropertyMappings.Add(new PropertyMapping
                         {
                             ColumnName = scalar.Column.Name,
+                            DataType = scalar.Column.TypeName,
                             PropertyName = path + item.Property.Name,
                             ForEntityType = t
                         });
@@ -208,6 +211,13 @@ namespace EntityFramework.Utilities
                 tableMapping.PropertyMappings = tableMapping.PropertyMappings.GroupBy(p => p.PropertyName)
                     .Select(g => g.OrderByDescending(outer => g.Count(inner => inner.ForEntityType.IsSubclassOf(outer.ForEntityType))).First())
                     .ToList();
+                foreach (var item in tableMapping.PropertyMappings)
+                {
+                    if ((mappingToLookAt.EntityType ?? mappingToLookAt.IsOfEntityTypes[0]).KeyProperties.Any(p => p.Name == item.PropertyName))
+                    {
+                        item.IsPrimaryKey = true;
+                    }
+                }
             }
         }
 
