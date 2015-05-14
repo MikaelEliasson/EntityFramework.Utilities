@@ -46,7 +46,7 @@ Newer version use the newer metadata apis and cannot be used
 
 Nuget package https://www.nuget.org/packages/EFUtilities/ 
 
-### EF 6.1
+### EF 6.1.3+
 
 Any package from 0.2.0 and up should work.
 
