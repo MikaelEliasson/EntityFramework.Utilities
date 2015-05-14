@@ -9,7 +9,7 @@ using Tests.FakeDomain.Models;
 namespace Tests
 {
     [TestClass]
-    public class DeleteAllTest
+    public class DeleteByQueryTest
     {
         [TestMethod]
         public void DeleteAll_PropertyEquals_DeletesAllMatchesAndNothingElse()
@@ -156,7 +156,7 @@ namespace Tests
         public void DeleteAll_NoProvider_UsesDefaultDelete()
         {
             string fallbackText = null;
-
+            Configuration.DisableDefaultFallback = false;
             Configuration.Log = str => fallbackText = str;
 
             using (var db = Context.SqlCe())

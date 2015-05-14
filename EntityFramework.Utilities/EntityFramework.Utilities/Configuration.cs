@@ -12,6 +12,8 @@ namespace EntityFramework.Utilities
             Providers.Add(new SqlQueryProvider());
 
             Log = m => { };
+
+            DisableDefaultFallback = true;
         
         }
 

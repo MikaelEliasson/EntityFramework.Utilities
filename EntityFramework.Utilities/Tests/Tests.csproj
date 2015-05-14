@@ -37,10 +37,11 @@
   <ItemGroup>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\EntityFramework.6.0.2\lib\net40\EntityFramework.dll</HintPath>
+      <HintPath>..\packages\EntityFramework.6.1.1\lib\net40\EntityFramework.dll</HintPath>
     </Reference>
-    <Reference Include="EntityFramework.SqlServer">
-      <HintPath>..\packages\EntityFramework.6.0.2\lib\net40\EntityFramework.SqlServer.dll</HintPath>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\EntityFramework.6.1.1\lib\net40\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework.SqlServerCompact">
       <HintPath>..\packages\EntityFramework.SqlServerCompact.6.0.2\lib\net40\EntityFramework.SqlServerCompact.dll</HintPath>
@@ -75,6 +76,7 @@
     <Compile Include="ConnectionStringReader.cs" />
     <Compile Include="ConnectionStrings.cs" />
     <Compile Include="AttachAndModifyTest.cs" />
+    <Compile Include="UpdateBulkTests.cs" />
     <Compile Include="FakeDomain\Contact.cs" />
     <Compile Include="FakeDomain\Email.cs" />
     <Compile Include="FakeDomain\Person.cs" />
@@ -83,7 +85,7 @@
     <Compile Include="IncludeTest.cs" />
     <Compile Include="Models\Comment.cs" />
     <Compile Include="RenamedColumnsUpdateAllTest.cs" />
-    <Compile Include="DeleteAllTest.cs" />
+    <Compile Include="DeleteByQueryTest.cs" />
     <Compile Include="Models\BlogPost.cs" />
     <Compile Include="FakeDomain\Context.cs" />
     <Compile Include="FakeDomain\RenamedAndReorderedContext.cs" />
@@ -92,7 +94,7 @@
     <Compile Include="Models\ReorderedBlogPost.cs" />
     <Compile Include="InsertTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UpdateAllTest.cs" />
+    <Compile Include="UpdateByQueryTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

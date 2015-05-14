@@ -10,16 +10,19 @@ Right now it's mostly to targeted at EF on SQL server but adding providers shoul
 
 Here is a small extract from the performance section later in the document.
 
-               Batch iteration with 25000 entities
-               Insert entities: 281ms
-               Update all entities with a: 163ms
-               delete all entities with a: 18ms
-               delete all entities: 107ms
-               Standard iteration with 25000 entities
-               Insert entities: 9601ms
-               Update all entities with a: 457ms
-               delete all entities with a: 250ms
-               delete all entities: 5895ms
+    Batch iteration with 25000 entities
+    Insert entities: 880ms
+    Update all entities with a: 189ms
+    Bulk update all with a random read: 153ms
+    delete all entities with a: 17ms
+    delete all entities: 282ms
+    
+    Standard iteration with 25000 entities
+    Insert entities: 8599ms
+    Update all entities with a: 360ms
+    Update all with a random read: 5779ms
+    delete all entities with a: 254ms
+    delete all entities: 5634ms
 
 ## Reporting bugs and feature requests
 
@@ -36,6 +39,14 @@ You need to manually select any of the O.1.xxx packages as the later packages ar
 Nuget package https://www.nuget.org/packages/EFUtilities/ 
 
 ### EF 6
+
+Any package from 0.2.0 and < 1.0.0
+
+Newer version use the newer metadata apis and cannot be used
+
+Nuget package https://www.nuget.org/packages/EFUtilities/ 
+
+### EF 6.1
 
 Any package from 0.2.0 and up should work.
 
@@ -115,6 +126,12 @@ Drops the mssql database even if it has connections open. Solves the problem whe
 
 These methods all work outside the normal EF pipeline and are located on the EFBatchOperation class. The design decision behind this choice is to make it clear you are NOT working against the context when using these methods. That's means change tracking, and 2nd level cache or validation will NOT be run. This is for pure performance and nothing less. These methods are also highly provider dependent. Right now the only existing provider is for Sql Server but it should be easy to add others.
 
+### Configuration
+
+EFUtilities supports some simple global settings. You can enable logging and control if default fallbacks should be used and add new Providers.
+
+See https://github.com/MikaelEliasson/EntityFramework.Utilities/blob/496a1a8e8d13c96cb5bb15a4dde9f839f312e9c7/EntityFramework.Utilities/EntityFramework.Utilities/Configuration.cs for the options
+
 ### Delete by query
 
 This will let you delete all Entities matching the predicate. But instead of the normal way to do this with EF (Load them into memory then delete them one by one) this method will create a Sql Query that deletes all items in one single call to the database. Here is how a call looks:
@@ -131,7 +148,7 @@ var count = EFBatchOperation.For(db, db.BlogPosts).Where(b => b.Created < upper 
 ### Batch insert entities
 
 
-Allows you to insert many entities in a very performant way instead of adding them one by one as you normally would do with EF. The benefit is superior performance, the disadvantage is that EF will no longer validate any contraits for you and you will not get the ids back if they are store generated. 
+Allows you to insert many entities in a very performant way instead of adding them one by one as you normally would do with EF. The benefit is superior performance, the disadvantage is that EF will no longer validate any contraits for you and you will not get the ids back if they are store generated. You cannot insert relationships this way either.
 
 ```c#
             using (var db = new YourDbContext())
@@ -143,8 +160,52 @@ Allows you to insert many entities in a very performant way instead of adding th
 On my dev machine that runs at around 500ms instead of 10s using the 'out of the box method'(Optimised by disabling change tracking and validation) or 90s with changetracking and validation. 
 
 SqlBulkCopy is used under the covers if you are running against SqlServer. If you are not running against SqlServer it will default to doing the normal inserts.
- 
-**Warning:** It should be able to handle renamed columns but I'm not 100% sure if it handle all cases of removed columns  
+
+#### Inheritance and Bulk insert
+
+Bulk insert should support TPH inheritance. The other inheritance models will most likely not work. 
+
+#### Transactions
+
+If your best choice is using TransactionScope. See example here https://github.com/MikaelEliasson/EntityFramework.Utilities/issues/26
+
+#### Making it work with profilers
+
+Profilers like MiniProfilers wrap the connection. EFUtilities need a "pure" connection. 
+One of the arguments is a connection that you can supply. 
+
+### Batch update entities
+
+Works just like InsertAll but for updates instead. You can chose exactly which columns to update too.
+
+An example where I load all items from the database and update them with a random number of reads-
+
+```c#
+var commentsFromDb = db.Comments.AsNoTracking().ToList();
+var rand = new Random();
+foreach (var item in commentsFromDb)
+{
+    item.Reads = rand.Next(0, 9999999);
+}
+EFBatchOperation.For(db, db.Comments).UpdateAll(commentsFromDb, x => x.ColumnsToUpdate(c => c.Reads));
+```
+
+On my dev machine that runs at around 153ms instead of 6s using the 'out of the box method'
+
+SqlBulkCopy is used under the covers if you are running against SqlServer. If you are not running against SqlServer it will default to doing the normal inserts.
+
+#### Inheritance and Bulk insert
+
+Not tested but most likely TPH will work as the code is very similar to InsertAll
+
+#### Transactions
+
+If your best choice is using TransactionScope. See example here https://github.com/MikaelEliasson/EntityFramework.Utilities/issues/26
+
+#### Making it work with profilers
+
+Profilers like MiniProfilers wrap the connection. EFUtilities need a "pure" connection. 
+One of the arguments is a connection that you can supply. 
 
 ### Update by query
 
