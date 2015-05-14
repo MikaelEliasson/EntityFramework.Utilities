@@ -5,12 +5,14 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.Entity.Core.Mapping;
 using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Infrastructure;
 using System.IO;
 using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
+using System.Reflection;
 
 namespace EntityFramework.Utilities
 {
@@ -54,6 +56,19 @@ namespace EntityFramework.Utilities
         /// </summary>
         public List<PropertyMapping> PropertyMappings { get; set; }
 
+        /// <summary>
+        /// Null if not TPH
+        /// </summary>
+        public TPHConfiguration TPHConfiguration { get; set; }
+
+
+    }
+
+    public class TPHConfiguration
+    {
+        public Dictionary<Type, string> Mappings { get; set; }
+        public string ColumnName { get; set; }
+
     }
 
     /// <summary>
@@ -70,6 +85,11 @@ namespace EntityFramework.Utilities
         /// The column that property is mapped to
         /// </summary>
         public string ColumnName { get; set; }
+
+        /// <summary>
+        /// Used when we have TPH to exclude entities
+        /// </summary>
+        public Type ForEntityType { get; set; }
     }
 
     /// <summary>
@@ -92,6 +112,8 @@ namespace EntityFramework.Utilities
 
             var metadata = ((IObjectContextAdapter)db).ObjectContext.MetadataWorkspace;
 
+            //EF61Test(metadata);
+
             // Conceptual part of the model has info about the shape of our entity classes
             var conceptualContainer = metadata.GetItems<EntityContainer>(DataSpace.CSpace).Single();
 
@@ -101,12 +123,18 @@ namespace EntityFramework.Utilities
             // Object part of the model that contains info about the actual CLR types
             var objectItemCollection = ((ObjectItemCollection)metadata.GetItemCollection(DataSpace.OSpace));
 
-            // Mapping part of model is not public, so we need to write to xml and use 'LINQ to XML'
-            var edmx = GetEdmx(db);
-
             // Loop thru each entity type in the model
             foreach (var set in conceptualContainer.BaseEntitySets.OfType<EntitySet>())
             {
+
+                // Find the mapping between conceptual and storage model for this entity set
+                var mapping = metadata.GetItems<EntityContainerMapping>(DataSpace.CSSpace)
+                        .Single()
+                        .EntitySetMappings
+                        .Single(s => s.EntitySet == set);
+
+
+
                 var typeMapping = new TypeMapping
                 {
                     TableMappings = new List<TableMapping>(),
@@ -115,51 +143,91 @@ namespace EntityFramework.Utilities
 
                 this.TypeMappings.Add(typeMapping.EntityType, typeMapping);
 
-                // Get the mapping fragments for this type
-                // (types may have mutliple fragments if 'Entity Splitting' is used)
-                var mappingFragments = edmx
-                    .Descendants()
-                    .Single(e =>
-                        e.Name.LocalName == "EntityTypeMapping"
-                        && (e.Attribute("TypeName").Value == set.ElementType.FullName || e.Attribute("TypeName").Value == string.Format("IsTypeOf({0})", set.ElementType.FullName)))
-                    .Descendants()
-                    .Where(e => e.Name.LocalName == "MappingFragment");
-
-                foreach (var mapping in mappingFragments)
+                var tableMapping = new TableMapping
                 {
-                    var tableMapping = new TableMapping
+                    PropertyMappings = new List<PropertyMapping>()
+                };
+                var mappingToLookAt = mapping.EntityTypeMappings.FirstOrDefault(m => m.IsHierarchyMapping) ?? mapping.EntityTypeMappings.First();
+                tableMapping.Schema = mappingToLookAt.Fragments[0].StoreEntitySet.Schema;
+                tableMapping.TableName = mappingToLookAt.Fragments[0].StoreEntitySet.Table;
+                typeMapping.TableMappings.Add(tableMapping);
+
+                Action<Type, System.Data.Entity.Core.Mapping.PropertyMapping, string> recurse = null;
+                recurse = (t, item, path) =>
+                {
+                    if (item is ComplexPropertyMapping)
                     {
-                        PropertyMappings = new List<PropertyMapping>()
-                    };
-                    typeMapping.TableMappings.Add(tableMapping);
-
-                    // Find the table that this fragment maps to
-                    var storeset = mapping.Attribute("StoreEntitySet").Value;
-                    var store = storeContainer
-                        .BaseEntitySets.OfType<EntitySet>()
-                        .Single(s => s.Name == storeset);
-
-                    tableMapping.TableName = (string)store.MetadataProperties["Table"].Value;
-                    tableMapping.Schema = (string)store.MetadataProperties["Schema"].Value;
-
-                    // Find the property-to-column mappings
-                    var propertyMappings = mapping
-                        .Descendants()
-                        .Where(e => e.Name.LocalName == "ScalarProperty");
-
-                    foreach (var propertyMapping in propertyMappings)
+                        var complex = item as ComplexPropertyMapping;
+                        foreach (var child in complex.TypeMappings[0].PropertyMappings)
+                        {
+                            recurse(t, child, path + complex.Property.Name + ".");
+                        }
+                    }
+                    else if (item is ScalarPropertyMapping)
                     {
-                        var propertyName = GetFullName(propertyMapping);
-                        var columnName = propertyMapping.Attribute("ColumnName").Value;
-
+                        var scalar = item as ScalarPropertyMapping;
                         tableMapping.PropertyMappings.Add(new PropertyMapping
                         {
-                            PropertyName = propertyName,
-                            ColumnName = columnName
+                            ColumnName = scalar.Column.Name,
+                            PropertyName = path + item.Property.Name,
+                            ForEntityType = t
                         });
                     }
+                };
+
+                Func<MappingFragment, Type> getClr = m => {
+                    return GetClrTypeFromTypeMapping(metadata, objectItemCollection, m.TypeMapping as EntityTypeMapping);
+                };
+
+                if (mapping.EntityTypeMappings.Any(m => m.IsHierarchyMapping))
+                {
+                    var withConditions = mapping.EntityTypeMappings.Where(m => m.Fragments[0].Conditions.Any()).ToList();
+                    tableMapping.TPHConfiguration = new TPHConfiguration
+                       {
+                           ColumnName = withConditions.First().Fragments[0].Conditions[0].Column.Name,
+                           Mappings = new Dictionary<Type,string>()
+                       };
+                    foreach (var item in withConditions)
+                    {
+                        tableMapping.TPHConfiguration.Mappings.Add(
+                            getClr(item.Fragments[0]),
+                            GetNonPublicPropertyValue(item.Fragments[0].Conditions[0], "Value").ToString()
+                            );
+                    }
                 }
+
+                foreach (var entityType in mapping.EntityTypeMappings)
+                {
+                    foreach (var item in entityType.Fragments[0].PropertyMappings)
+                    {
+                        recurse(getClr(entityType.Fragments[0]), item, "");
+                    }
+                }
+
+                //Inheriting propertymappings contains duplicates for id's. 
+                tableMapping.PropertyMappings = tableMapping.PropertyMappings.GroupBy(p => p.PropertyName)
+                    .Select(g => g.OrderByDescending(outer => g.Count(inner => inner.ForEntityType.IsSubclassOf(outer.ForEntityType))).First())
+                    .ToList();
             }
+        }
+
+        private Type GetClrTypeFromTypeMapping(MetadataWorkspace metadata, ObjectItemCollection objectItemCollection, EntityTypeMapping mapping)
+        {
+            return GetClrType(metadata, objectItemCollection, mapping.EntityType ?? mapping.IsOfEntityTypes.First());
+        }
+
+
+        static object GetNonPublicPropertyValue(object o, string propertyName)
+        {
+            return o.GetType()
+              .GetProperty(propertyName, BindingFlags.NonPublic | BindingFlags.Instance)
+              .GetValue(o, null);
+        }
+
+        private static dynamic GetProperty(string property, object instance)
+        {
+            var type = instance.GetType();
+            return type.InvokeMember(property, BindingFlags.GetProperty | BindingFlags.Public | BindingFlags.Instance, null, instance, null);
         }
 
         private string GetFullName(XElement propertyMapping)
@@ -173,10 +241,15 @@ namespace EntityFramework.Utilities
 
         private static Type GetClrType(MetadataWorkspace metadata, ObjectItemCollection objectItemCollection, EntitySet set)
         {
+            return GetClrType(metadata, objectItemCollection, set.ElementType);
+        }
+
+        private static Type GetClrType(MetadataWorkspace metadata, ObjectItemCollection objectItemCollection, EntityTypeBase type)
+        {
             return metadata
                    .GetItems<EntityType>(DataSpace.OSpace)
                    .Select(objectItemCollection.GetClrType)
-                   .Single(e => e.Name == set.ElementType.Name);
+                   .Single(e => e.Name == type.Name);
         }
 
         private static XDocument GetEdmx(DbContext db)

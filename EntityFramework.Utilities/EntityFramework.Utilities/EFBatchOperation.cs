@@ -21,7 +21,7 @@ namespace EntityFramework.Utilities
         /// <param name="items">The items to insert</param>
         /// <param name="connection">The DbConnection to use for the insert. Only needed when for example a profiler wraps the connection. Then you need to provide a connection of the type the provider use.</param>
         /// <param name="batchSize">The size of each batch. Default depends on the provider. SqlProvider uses 15000 as default</param>        
-        void InsertAll(IEnumerable<T> items, DbConnection connection = null, int? batchSize = null);
+        void InsertAll<TEntity>(IEnumerable<TEntity> items, DbConnection connection = null, int? batchSize = null) where TEntity : class, T; 
         IEFBatchOperationFiltered<TContext, T> Where(Expression<Func<T, bool>> predicate);
     }
 
@@ -68,7 +68,7 @@ namespace EntityFramework.Utilities
         /// <param name="items">The items to insert</param>
         /// <param name="connection">The DbConnection to use for the insert. Only needed when for example a profiler wraps the connection. Then you need to provide a connection of the type the provider use.</param>
         /// <param name="batchSize">The size of each batch. Default depends on the provider. SqlProvider uses 15000 as default</param>
-        public void InsertAll(IEnumerable<T> items, DbConnection connection = null, int? batchSize = null)
+        public void InsertAll<TEntity>(IEnumerable<TEntity> items, DbConnection connection = null, int? batchSize = null) where TEntity : class, T
         {
             var con = context.Connection as EntityConnection;
             if (con == null)
@@ -78,7 +78,7 @@ namespace EntityFramework.Utilities
             }
 
             var connectionToUse = connection ?? con.StoreConnection;
-
+            var currentType = typeof(TEntity);
             var provider = Configuration.Providers.FirstOrDefault(p => p.CanHandle(connectionToUse));
             if (provider != null && provider.CanInsert)
             {
@@ -87,7 +87,17 @@ namespace EntityFramework.Utilities
                 var typeMapping = mapping.TypeMappings[typeof(T)];
                 var tableMapping = typeMapping.TableMappings.First();
 
-                var properties = tableMapping.PropertyMappings.Select(p => new ColumnMapping { NameInDatabase = p.ColumnName, NameOnObject = p.PropertyName }).ToList();
+                var properties = tableMapping.PropertyMappings
+                    .Where(p => currentType.IsSubclassOf(p.ForEntityType) || p.ForEntityType == currentType)
+                    .Select(p => new ColumnMapping { NameInDatabase = p.ColumnName, NameOnObject = p.PropertyName }).ToList();
+                if (tableMapping.TPHConfiguration != null)
+                {
+                    properties.Add(new ColumnMapping
+                    {
+                        NameInDatabase = tableMapping.TPHConfiguration.ColumnName,
+                        StaticValue = tableMapping.TPHConfiguration.Mappings[typeof(TEntity)]
+                    });
+                }
 
                 provider.InsertItems(items, tableMapping.Schema, tableMapping.TableName, properties, connectionToUse, batchSize);
             }

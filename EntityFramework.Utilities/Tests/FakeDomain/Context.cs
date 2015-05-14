@@ -30,8 +30,9 @@ namespace Tests.FakeDomain
             modelBuilder.ComplexType<Address>();
 
             //Table per Type Hierarchy setup
-            modelBuilder.Entity<Person>().ToTable("Person");
-            modelBuilder.Entity<Contact>().ToTable("Contact");
+            modelBuilder.Entity<Person>()
+                .Map<Person>(m => m.Requires("Type").HasValue("Person"))
+                .Map<Contact>(m => m.Requires("Type").HasValue("Contact"));
         }
 
         public static Context Sql()

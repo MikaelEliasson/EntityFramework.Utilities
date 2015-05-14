@@ -19,6 +19,11 @@ namespace EntityFramework.Utilities
             Properties = properties.Select(p => p.NameOnObject).ToList();
             Accessors = properties.Select(p =>
             {
+                if (p.StaticValue != null)
+                {
+                    Func<T,object> func = x => p.StaticValue;
+                    return func;
+                }
 
                 var parts = p.NameOnObject.Split('.');
 

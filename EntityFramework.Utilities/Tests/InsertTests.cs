@@ -23,62 +23,46 @@ namespace Tests
                 db.Database.Create();
 
                 List<Contact> people = new List<Contact>();
-                people.Add(new Contact
-                {
-                    FirstName = "FN1",
-                    LastName = "LN1",
-                    Title = "Director",
-                    Id = Guid.NewGuid(),
-                    BirthDate = DateTime.Today,
-                    PhoneNumbers = new List<PhoneNumber>(){
-                       new PhoneNumber{
-                           Id = Guid.NewGuid(),
-                           Number = "10134"
-                       },
-                       new PhoneNumber{
-                           Id = Guid.NewGuid(),
-                           Number = "15678"
-                       },
-                    }
-                });
-                people.Add(new Contact
-                {
-                    FirstName = "FN2",
-                    LastName = "LN2",
-                    Title = "Associate",
-                    Id = Guid.NewGuid(),
-                    BirthDate = DateTime.Today,
-                    PhoneNumbers = new List<PhoneNumber>(){
-                       new PhoneNumber{
-                           Id = Guid.NewGuid(),
-                           Number = "20134"
-                       },
-                       new PhoneNumber{
-                           Id = Guid.NewGuid(),
-                           Number = "25678"
-                       },
-                    },
-                    Emails = new List<Email>()
-                {
-                    new Email{Id = Guid.NewGuid(), Address = "m21@mail.com" },
-                    new Email{Id = Guid.NewGuid(), Address = "m22@mail.com" },
-                }
-                });
-                people.Add(new Contact
-                {
-                    FirstName = "FN3",
-                    LastName = "LN3",
-                    Title = "Vice President",
-                    Id = Guid.NewGuid(),
-                    BirthDate = DateTime.Today,
-                    Emails = new List<Email>()
-                {
-                    new Email{Id = Guid.NewGuid(), Address = "m31@mail.com" },
-                    new Email{Id = Guid.NewGuid(), Address = "m32@mail.com" },
-                }
-                });
+                people.Add(Contact.Build("FN1", "LN1", "Director"));
+                people.Add(Contact.Build("FN2", "LN2", "Associate"));
+                people.Add(Contact.Build("FN3", "LN3", "Vice President"));
 
                 EFBatchOperation.For(db, db.People).InsertAll(people);
+            }
+
+            using (var db = Context.Sql())
+            {
+                var contacts = db.People.OfType<Contact>().OrderBy(c => c.FirstName).ToList();
+                Assert.AreEqual(3, contacts.Count);
+                Assert.AreEqual("FN1", contacts.First().FirstName);
+                Assert.AreEqual("Director", contacts.First().Title);
+            }
+        }
+
+        [TestMethod]
+        public void InsertAll_InsertItems_WithTypeHierarchyBase()
+        {
+            using (var db = Context.Sql())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.Delete();
+                }
+                db.Database.Create();
+
+                List<Person> people = new List<Person>();
+                people.Add(Person.Build("FN1", "LN1"));
+                people.Add(Person.Build("FN2", "LN2"));
+                people.Add(Person.Build("FN3", "LN3"));
+
+                EFBatchOperation.For(db, db.People).InsertAll(people);
+            }
+
+            using (var db = Context.Sql())
+            {
+                var contacts = db.People.OrderBy(c => c.FirstName).ToList();
+                Assert.AreEqual(3, contacts.Count);
+                Assert.AreEqual("FN1", contacts.First().FirstName);
             }
         }
 
@@ -105,6 +89,7 @@ namespace Tests
             using (var db = Context.Sql())
             {
                 Assert.AreEqual(3, db.BlogPosts.Count());
+                Assert.AreEqual("m@m.com", db.BlogPosts.First().Author.Email);
             }
         }
 
