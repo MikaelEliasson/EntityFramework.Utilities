@@ -194,6 +194,18 @@ On my dev machine that runs at around 153ms instead of 6s using the 'out of the 
 
 SqlBulkCopy is used under the covers if you are running against SqlServer. If you are not running against SqlServer it will default to doing the normal inserts.
 
+#### Partial updates / Not loading the data from DB first
+
+Because you specify which columns to update you can do simple partial updates. In the example above I could have generated the list ```commentsFromDb``` from an import file for example. What I need to populate is the PrimaryKey and the columns I specify to update.  
+
+Example: 
+
+```c#
+var lines = csv.ReadAllLines().Select(l => l.Split(";"));
+var comments = lines.Select(line => new Comment{ Id = int.Parse(line[0]), Reads = int.Parse(line[1]) });
+EFBatchOperation.For(db, db.Comments).UpdateAll(comments, x => x.ColumnsToUpdate(c => c.Reads));
+```
+
 #### Inheritance and Bulk insert
 
 Not tested but most likely TPH will work as the code is very similar to InsertAll
@@ -206,6 +218,10 @@ If your best choice is using TransactionScope. See example here https://github.c
 
 Profilers like MiniProfilers wrap the connection. EFUtilities need a "pure" connection. 
 One of the arguments is a connection that you can supply. 
+
+#### Permissions
+
+The SQL Server provider creates a temporary template. The login you are using must have permissions to create and drop a table. 
 
 ### Update by query
 
