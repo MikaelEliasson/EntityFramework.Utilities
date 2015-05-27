@@ -15,17 +15,17 @@ namespace PerformanceTests
         static void Main(string[] args)
         {
             BatchIteration(25);
-            BatchIteration(25);
-            NormalIteration(25);
-            NormalIteration(25);
-            BatchIteration(2500);
-            NormalIteration(2500);
-            BatchIteration(25000);
-            NormalIteration(25000);
-            BatchIteration(50000);
+            //BatchIteration(25);
+            //NormalIteration(25);
+            //NormalIteration(25);
+            //BatchIteration(2500);
+            //NormalIteration(2500);
+            //BatchIteration(25000);
+            //NormalIteration(25000);
+            //BatchIteration(50000);
             //NormalIteration(50000);
             BatchIteration(100000);
-            NormalIteration(100000);
+            //NormalIteration(100000);
         }
 
 
@@ -126,7 +126,20 @@ namespace PerformanceTests
                 stop.Start();
                 EFBatchOperation.For(db, db.Comments).InsertAll(comments);
                 stop.Stop();
+                Console.WriteLine(comments.First().Id);
+                Console.WriteLine(comments.Last().Id);
                 Console.WriteLine("Insert entities: " + stop.ElapsedMilliseconds + "ms");
+
+                stop.Start();
+                EFBatchOperation.For(db, db.Comments).InsertAll(comments, new BulkSettings
+                {
+                    ReturnIdsOnInsert = true
+                });
+                stop.Stop();
+                Console.WriteLine(comments.First().Id);
+                Console.WriteLine(comments.Last().Id);
+                Console.WriteLine("Insert entities (id return): " + stop.ElapsedMilliseconds + "ms");
+               
 
                 stop.Restart();
                 EFBatchOperation.For(db, db.Comments).Where(x => x.Text == "a").Update(x => x.Reads, x => x.Reads + 1);

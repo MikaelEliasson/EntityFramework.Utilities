@@ -92,6 +92,8 @@ namespace EntityFramework.Utilities
         public string DataType { get; set; }
 
         public bool IsPrimaryKey { get; set; }
+
+        public bool IsStoreGenerated { get; set; }
     }
 
     /// <summary>
@@ -173,7 +175,8 @@ namespace EntityFramework.Utilities
                             ColumnName = scalar.Column.Name,
                             DataType = scalar.Column.TypeName,
                             PropertyName = path + item.Property.Name,
-                            ForEntityType = t
+                            ForEntityType = t,
+                            IsStoreGenerated = scalar.Column.IsStoreGeneratedIdentity
                         });
                     }
                 };
