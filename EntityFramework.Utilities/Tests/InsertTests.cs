@@ -5,11 +5,12 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.FakeDomain;
 using Tests.FakeDomain.Models;
 using System;
+using System.Threading.Tasks;
 
 namespace Tests
 {
     [TestClass]
-    public class InsertTests 
+    public class InsertTests
     {
         [TestMethod]
         public void InsertAll_InsertItems_WithTypeHierarchy()
@@ -90,6 +91,101 @@ namespace Tests
             {
                 Assert.AreEqual(3, db.BlogPosts.Count());
                 Assert.AreEqual("m@m.com", db.BlogPosts.First().Author.Email);
+            }
+        }
+
+        [TestMethod]
+        public async Task InsertAllAsync_InsertsItems()
+        {
+            using (var db = Context.Sql())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.Delete();
+                }
+                db.Database.Create();
+
+                var list = new List<BlogPost>(){
+                    BlogPost.Create("T1"),
+                    BlogPost.Create("T2"),
+                    BlogPost.Create("T3")
+                };
+
+                await EFBatchOperation.For(db, db.BlogPosts).InsertAllAsync(list);
+            }
+
+            using (var db = Context.Sql())
+            {
+                Assert.AreEqual(3, db.BlogPosts.Count());
+                Assert.AreEqual("m@m.com", db.BlogPosts.First().Author.Email);
+            }
+        }
+
+        [TestMethod]
+        public void InsertAll_WithIdReturn_InsertsItemsAndSetIds()
+        {
+            var list = new List<BlogPost>(){
+                    BlogPost.Create("T1"),
+                    BlogPost.Create("T2"),
+                    BlogPost.Create("T3")
+                };
+            using (var db = Context.Sql())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.ForceDelete();
+                }
+                db.Database.Create();
+
+                EFBatchOperation.For(db, db.BlogPosts).InsertAll(list, new BulkSettings
+                {
+                    ReturnIdsOnInsert = true,
+                });
+            }
+
+            using (var db = Context.Sql())
+            {
+                var ids = list.Select(x => x.ID).Distinct();
+                Assert.AreEqual(3, ids.Count());
+
+                var first = list.First();
+                var firstInDb = db.BlogPosts.Find(first.ID);
+
+                Assert.AreEqual(first.Title, firstInDb.Title);
+            }
+        }
+
+        [TestMethod]
+        public async Task InsertAllAsync_WithIdReturn_InsertsItemsAndSetIds()
+        {
+            var list = new List<BlogPost>(){
+                    BlogPost.Create("T1"),
+                    BlogPost.Create("T2"),
+                    BlogPost.Create("T3")
+                };
+            using (var db = Context.Sql())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.ForceDelete();
+                }
+                db.Database.Create();
+
+                await EFBatchOperation.For(db, db.BlogPosts).InsertAllAsync(list, new BulkSettings
+                {
+                    ReturnIdsOnInsert = true,
+                });
+            }
+
+            using (var db = Context.Sql())
+            {
+                var ids = list.Select(x => x.ID).Distinct();
+                Assert.AreEqual(3, ids.Count());
+
+                var first = list.First();
+                var firstInDb = db.BlogPosts.Find(first.ID);
+
+                Assert.AreEqual(first.Title, firstInDb.Title);
             }
         }
 

@@ -56,5 +56,24 @@ namespace EntityFramework.Utilities
             // compile it
             return set.Compile();
         }
+
+        internal static Action<T, object> PropertyNameToSetter<T>(string propertyName)
+        {
+            var method = typeof(T).GetProperty(propertyName).GetSetMethod();
+
+            var obj = Expression.Parameter(typeof(T), "o");
+            var value = Expression.Parameter(typeof(object));
+
+            Expression<Action<T, object>> expr =
+                Expression.Lambda<Action<T, object>>(
+                    Expression.Call(
+                        Expression.Convert(obj, method.DeclaringType),
+                        method,
+                        Expression.Convert(value, method.GetParameters()[0].ParameterType)),
+                    obj,
+                    value);
+
+            return expr.Compile();
+        }
     }
 }

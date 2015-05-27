@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace EntityFramework.Utilities
 {
@@ -40,45 +41,165 @@ namespace EntityFramework.Utilities
             }
             else
             {
-                updateSql = string.Join(" = ", update.Split(new string[]{" = "}, StringSplitOptions.RemoveEmptyEntries).Reverse());
+                updateSql = string.Join(" = ", update.Split(new string[] { " = " }, StringSplitOptions.RemoveEmptyEntries).Reverse());
             }
-           
+
 
             return string.Format("UPDATE [{0}].[{1}] SET {2} {3}", predicateQueryInfo.Schema, predicateQueryInfo.Table, updateSql, predicateQueryInfo.WhereSql);
         }
 
         public void InsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize)
         {
+            InsertItems(items, schema, tableName, properties, new BulkSettings { BatchSize = batchSize, Connection = storeConnection });
+        }
+
+        public void InsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, BulkSettings settings)
+        {
+            if (settings.ReturnIdsOnInsert && properties.Any(p => p.IsPrimaryKey && p.IsStoreGenerated))
+            {
+                var tempTableName = "temp_" + tableName + "_" + DateTime.Now.Ticks;
+                var str = SqlServerTSQLGenerator.BuildCreateTableCommand(schema, tempTableName, properties.Where(p => !p.IsStoreGenerated));
+                var mergeCommand = SqlServerTSQLGenerator.BuildSelectIntoCommand(tableName, properties, tempTableName);
+
+                var con = settings.Connection as SqlConnection;
+                if (con.State != System.Data.ConnectionState.Open)
+                {
+                    con.Open();
+                }
+
+                var setters = properties.Where(p => p.IsStoreGenerated).Select((p, i) => new { i, setter = ExpressionHelper.PropertyNameToSetter<T>(p.NameOnObject) }).ToList();
+
+
+                using (var createCommand = new SqlCommand(str, con))
+                using (var mCommand = new SqlCommand(mergeCommand, con))
+                using (var dCommand = new SqlCommand(SqlServerTSQLGenerator.BuildDropStatement(schema, tempTableName), con))
+                {
+                    createCommand.ExecuteNonQuery();
+                    InsertItemsWithoutIdInsert(items, schema, tempTableName, properties.Where(p => !p.IsStoreGenerated).ToList(), settings);
+                    using (var reader = mCommand.ExecuteReader())
+                    {
+                        foreach (var item in items)
+                        {
+                            reader.Read();
+
+                            foreach (var setter in setters)
+                            {
+                                setter.setter(item, reader.GetValue(setter.i));
+                            }
+                        }
+                    }
+                    dCommand.ExecuteNonQuery();
+                }
+            }
+            else
+            {
+                InsertItemsWithoutIdInsert(items, schema, tableName, properties, settings);
+            }
+
+        }
+
+
+        public async Task InsertItemsAsync<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, BulkSettings settings)
+        {
+            if (settings.ReturnIdsOnInsert && properties.Any(p => p.IsPrimaryKey && p.IsStoreGenerated))
+            {
+                var tempTableName = "temp_" + tableName + "_" + DateTime.Now.Ticks;
+                var str = SqlServerTSQLGenerator.BuildCreateTableCommand(schema, tempTableName, properties.Where(p => !p.IsStoreGenerated));
+                var mergeCommand = SqlServerTSQLGenerator.BuildSelectIntoCommand(tableName, properties, tempTableName);
+
+                var con = settings.Connection as SqlConnection;
+                if (con.State != System.Data.ConnectionState.Open)
+                {
+                    await con.OpenAsync();
+                }
+
+                var setters = properties.Where(p => p.IsStoreGenerated).Select((p, i) => new { i, setter = ExpressionHelper.PropertyNameToSetter<T>(p.NameOnObject) }).ToList();
+
+
+                using (var createCommand = new SqlCommand(str, con))
+                using (var mCommand = new SqlCommand(mergeCommand, con))
+                using (var dCommand = new SqlCommand(SqlServerTSQLGenerator.BuildDropStatement(schema, tempTableName), con))
+                {
+                    await createCommand.ExecuteNonQueryAsync();
+                    await InsertItemsWithoutIdInsertAsync(items, schema, tempTableName, properties.Where(p => !p.IsStoreGenerated).ToList(), settings);
+                    using (var reader = await mCommand.ExecuteReaderAsync())
+                    {
+                        foreach (var item in items)
+                        {
+                            await reader.ReadAsync();
+
+                            foreach (var setter in setters)
+                            {
+                                setter.setter(item, reader.GetValue(setter.i));
+                            }
+                        }
+                    }
+                    await dCommand.ExecuteNonQueryAsync();
+                }
+            }
+            else
+            {
+                await InsertItemsWithoutIdInsertAsync(items, schema, tableName, properties, settings);
+            }
+
+        }
+
+        private async Task InsertItemsWithoutIdInsertAsync<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, BulkSettings settings)
+        {
             using (var reader = new EFDataReader<T>(items, properties))
             {
-                var con = storeConnection as SqlConnection;
+                var con = settings.Connection as SqlConnection;
+                if (con.State != System.Data.ConnectionState.Open)
+                {
+                    await con.OpenAsync();
+                }
+                using (SqlBulkCopy copy = new SqlBulkCopy(con))
+                {
+                    ApplyBulkCopyOptions<T>(schema, tableName, properties, settings, reader, copy);
+                    await copy.WriteToServerAsync(reader);
+                    copy.Close();
+                }
+            }
+        }
+
+        private void InsertItemsWithoutIdInsert<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, BulkSettings settings)
+        {
+            using (var reader = new EFDataReader<T>(items, properties))
+            {
+                var con = settings.Connection as SqlConnection;
                 if (con.State != System.Data.ConnectionState.Open)
                 {
                     con.Open();
                 }
                 using (SqlBulkCopy copy = new SqlBulkCopy(con))
                 {
-                    copy.BatchSize = Math.Min(reader.RecordsAffected, batchSize ?? 15000); //default batch size
-                    if (!string.IsNullOrWhiteSpace(schema))
-                    {
-                        copy.DestinationTableName = string.Format("[{0}].[{1}]", schema, tableName);
-                    }
-                    else
-                    {
-                        copy.DestinationTableName = "[" + tableName + "]";
-                    }
-                    
-                    copy.NotifyAfter = 0;
-
-                    foreach (var i in Enumerable.Range(0, reader.FieldCount))
-                    {
-                        copy.ColumnMappings.Add(i, properties[i].NameInDatabase);
-                    }
+                    ApplyBulkCopyOptions<T>(schema, tableName, properties, settings, reader, copy);
                     copy.WriteToServer(reader);
                     copy.Close();
                 }
             }
         }
+
+        private static void ApplyBulkCopyOptions<T>(string schema, string tableName, IList<ColumnMapping> properties, BulkSettings settings, EFDataReader<T> reader, SqlBulkCopy copy)
+        {
+            copy.BatchSize = Math.Min(reader.RecordsAffected, settings.BatchSize ?? 15000); //default batch size
+            if (!string.IsNullOrWhiteSpace(schema))
+            {
+                copy.DestinationTableName = string.Format("[{0}].[{1}]", schema, tableName);
+            }
+            else
+            {
+                copy.DestinationTableName = "[" + tableName + "]";
+            }
+
+            copy.NotifyAfter = 0;
+
+            foreach (var i in Enumerable.Range(0, reader.FieldCount))
+            {
+                copy.ColumnMappings.Add(i, properties[i].NameInDatabase);
+            }
+        }
+
 
 
         public void UpdateItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, UpdateSpecification<T> updateSpecification)
@@ -86,10 +207,9 @@ namespace EntityFramework.Utilities
             var tempTableName = "temp_" + tableName + "_" + DateTime.Now.Ticks;
             var columnsToUpdate = updateSpecification.Properties.Select(p => p.GetPropertyName()).ToDictionary(x => x);
             var filtered = properties.Where(p => columnsToUpdate.ContainsKey(p.NameOnObject) || p.IsPrimaryKey).ToList();
-            var columns = filtered.Select(c => "[" + c.NameInDatabase + "] " + c.DataType);
-            var pkConstraint = string.Join(", ", properties.Where(p => p.IsPrimaryKey).Select(c => "[" + c.NameInDatabase + "]"));
 
-            var str = string.Format("CREATE TABLE {0}.[{1}]({2}, PRIMARY KEY ({3}))", schema, tempTableName, string.Join(", ", columns), pkConstraint);
+            var str = SqlServerTSQLGenerator.BuildCreateTableCommand(schema, tempTableName, filtered);
+
 
             var con = storeConnection as SqlConnection;
             if (con.State != System.Data.ConnectionState.Open)
@@ -97,32 +217,46 @@ namespace EntityFramework.Utilities
                 con.Open();
             }
 
-            var setters = string.Join(",", filtered.Where(c => !c.IsPrimaryKey).Select(c => "[" + c.NameInDatabase + "] = TEMP.[" + c.NameInDatabase + "]"));
-            var pks = properties.Where(p => p.IsPrimaryKey).Select(x => "ORIG.[" + x.NameInDatabase + "] = TEMP.[" + x.NameInDatabase + "]");
-            var filter = string.Join(",",  pks);
-            var mergeCommand =  string.Format(@"UPDATE [{0}]
-                SET
-                    {3}
-                FROM
-                    [{0}] ORIG
-                INNER JOIN
-                     [{1}] TEMP
-                ON 
-                    {2}", tableName, tempTableName, filter, setters);
+            var mergeCommand = SqlServerTSQLGenerator.BuildMergeCommand(tableName, filtered, tempTableName);
 
             using (var createCommand = new SqlCommand(str, con))
             using (var mCommand = new SqlCommand(mergeCommand, con))
-            using (var dCommand = new SqlCommand(string.Format("DROP table {0}.[{1}]", schema, tempTableName), con))
+            using (var dCommand = new SqlCommand(SqlServerTSQLGenerator.BuildDropStatement(schema, tempTableName), con))
             {
                 createCommand.ExecuteNonQuery();
                 InsertItems(items, schema, tempTableName, filtered, storeConnection, batchSize);
                 mCommand.ExecuteNonQuery();
                 dCommand.ExecuteNonQuery();
             }
-
-            
         }
 
+        public async Task UpdateItemsAsync<T>(IEnumerable<T> items, string schema, string tableName, List<ColumnMapping> properties, BulkSettings settings, UpdateSpecification<T> updateSpecification)
+        {
+            var tempTableName = "temp_" + tableName + "_" + DateTime.Now.Ticks;
+            var columnsToUpdate = updateSpecification.Properties.Select(p => p.GetPropertyName()).ToDictionary(x => x);
+            var filtered = properties.Where(p => columnsToUpdate.ContainsKey(p.NameOnObject) || p.IsPrimaryKey).ToList();
+
+            var str = SqlServerTSQLGenerator.BuildCreateTableCommand(schema, tempTableName, filtered);
+
+
+            var con = settings.Connection as SqlConnection;
+            if (con.State != System.Data.ConnectionState.Open)
+            {
+                await con.OpenAsync();
+            }
+
+            var mergeCommand = SqlServerTSQLGenerator.BuildMergeCommand(tableName, filtered, tempTableName);
+
+            using (var createCommand = new SqlCommand(str, con))
+            using (var mCommand = new SqlCommand(mergeCommand, con))
+            using (var dCommand = new SqlCommand(SqlServerTSQLGenerator.BuildDropStatement(schema, tempTableName), con))
+            {
+                await createCommand.ExecuteNonQueryAsync();
+                await InsertItemsAsync(items, schema, tempTableName, filtered, settings);
+                await mCommand.ExecuteNonQueryAsync();
+                await dCommand.ExecuteNonQueryAsync();
+            }
+        }
 
         public bool CanHandle(System.Data.Common.DbConnection storeConnection)
         {
@@ -150,6 +284,5 @@ namespace EntityFramework.Utilities
             }
             return queryInfo;
         }
-
     }
 }
