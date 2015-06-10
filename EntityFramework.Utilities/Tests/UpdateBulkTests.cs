@@ -37,6 +37,45 @@ namespace Tests
         }
 
         [TestMethod]
+        public void UpdateBulk_CanUpdateTPH()
+        {
+            using (var db = Context.Sql())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.Delete();
+                }
+                db.Database.Create();
+
+                List<Contact> people = new List<Contact>();
+                people.Add(Contact.Build("FN1", "LN1", "Director"));
+                people.Add(Contact.Build("FN2", "LN2", "Associate"));
+                people.Add(Contact.Build("FN3", "LN3", "Vice President"));
+
+                EFBatchOperation.For(db, db.People).InsertAll(people);
+            }
+
+            using (var db = Context.Sql())
+            {
+                var contacts = db.Contacts.ToList();
+
+                foreach (var contact in contacts)
+                {
+                    contact.FirstName = contact.Title + " " + contact.FirstName;
+                }
+
+                EFBatchOperation.For(db, db.People).UpdateAll(contacts, x => x.ColumnsToUpdate(p => p.FirstName));
+            }
+
+            using (var db = Context.Sql())
+            {
+                var contacts = db.People.OfType<Contact>().OrderBy(c => c.LastName).ToList();
+                Assert.AreEqual(3, contacts.Count);
+                Assert.AreEqual("Director FN1", contacts.First().FirstName);
+            }
+        }
+
+        [TestMethod]
         public void UpdateBulk_CanUpdateNumerics()
         {
             using (var db = Context.Sql())

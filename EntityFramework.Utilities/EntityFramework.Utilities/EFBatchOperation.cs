@@ -164,15 +164,6 @@ namespace EntityFramework.Utilities
                         IsPrimaryKey = p.IsPrimaryKey
                      }).ToList();
 
-                if (tableMapping.TPHConfiguration != null)
-                {
-                    properties.Add(new ColumnMapping
-                    {
-                        NameInDatabase = tableMapping.TPHConfiguration.ColumnName,
-                        StaticValue = tableMapping.TPHConfiguration.Mappings[typeof(TEntity)]
-                    });
-                }
-
                 var spec = new UpdateSpecification<TEntity>();
                 updateSpecification(spec);
                 provider.UpdateItems(items, tableMapping.Schema, tableMapping.TableName, properties, connectionToUse, batchSize, spec);
