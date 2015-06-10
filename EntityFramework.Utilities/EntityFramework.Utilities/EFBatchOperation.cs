@@ -160,18 +160,9 @@ namespace EntityFramework.Utilities
                     .Select(p => new ColumnMapping { 
                         NameInDatabase = p.ColumnName, 
                         NameOnObject = p.PropertyName, 
-                        DataType = p.DataType,
+                        DataType = p.DataTypeFull,
                         IsPrimaryKey = p.IsPrimaryKey
                      }).ToList();
-
-                if (tableMapping.TPHConfiguration != null)
-                {
-                    properties.Add(new ColumnMapping
-                    {
-                        NameInDatabase = tableMapping.TPHConfiguration.ColumnName,
-                        StaticValue = tableMapping.TPHConfiguration.Mappings[typeof(TEntity)]
-                    });
-                }
 
                 var spec = new UpdateSpecification<TEntity>();
                 updateSpecification(spec);
