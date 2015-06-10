@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.FakeDomain;
 using Tests.FakeDomain.Models;
 using Tests.Models;
+using System;
 
 namespace Tests
 {
@@ -71,6 +72,45 @@ namespace Tests
                 Assert.AreEqual(1.1m, item.DecimalType);
                 Assert.AreEqual(2.1f, item.FloatType);
                 Assert.AreEqual(3.1m, item.NumericType);
+            }
+        }
+
+        [TestMethod]
+        public void UpdateBulk_CanUpdateMultiPK()
+        {
+            using (var db = Context.Sql())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.ForceDelete();
+                }
+                db.Database.Create();
+
+                var guid = Guid.NewGuid();
+                var list = new List<MultiPKObject>(){
+                    new MultiPKObject{ PK1 = guid, PK2 = 0 },
+                    new MultiPKObject{ PK1 = guid, PK2 = 1 }
+                };
+
+                EFBatchOperation.For(db, db.MultiPKObjects).InsertAll(list);
+            }
+
+            using (var db = Context.Sql())
+            {
+                var items = db.MultiPKObjects.ToList();
+                var index = 1;
+                foreach (var item in items)
+                {
+                    item.Text = "#" + index++;
+                }
+                EFBatchOperation.For(db, db.MultiPKObjects).UpdateAll(items, spec => spec.ColumnsToUpdate(p => p.Text));
+            }
+
+            using (var db = Context.Sql())
+            {
+                var items = db.MultiPKObjects.OrderBy(x => x.PK2).ToList();
+                Assert.AreEqual("#1", items[0].Text);
+                Assert.AreEqual("#2", items[1].Text);
             }
         }
 

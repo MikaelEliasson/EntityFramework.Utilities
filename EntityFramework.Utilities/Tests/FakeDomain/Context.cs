@@ -24,6 +24,7 @@ namespace Tests.FakeDomain
         public DbSet<Email> Emails { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<NumericTestObject> NumericTestsObjects { get; set; }
+        public DbSet<MultiPKObject> MultiPKObjects { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
@@ -35,6 +36,9 @@ namespace Tests.FakeDomain
             modelBuilder.Entity<Person>()
                 .Map<Person>(m => m.Requires("Type").HasValue("Person"))
                 .Map<Contact>(m => m.Requires("Type").HasValue("Contact"));
+
+            modelBuilder.Entity<MultiPKObject>().HasKey(x => new { x.PK1, x.PK2 });
+
 
             modelBuilder.Entity<BlogPost>().Property(x => x.ShortTitle).HasMaxLength(100);
 
