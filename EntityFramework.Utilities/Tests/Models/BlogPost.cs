@@ -9,6 +9,7 @@ namespace Tests.FakeDomain.Models
     {
         public int ID { get; set; }
         public string Title { get; set; }
+        public string ShortTitle { get; set; }
         public DateTime Created { get; set; }
         public int Reads { get; set; }
         public AuthorInfo Author { get; set; }

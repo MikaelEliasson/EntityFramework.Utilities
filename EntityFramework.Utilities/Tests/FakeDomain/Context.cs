@@ -33,6 +33,8 @@ namespace Tests.FakeDomain
             modelBuilder.Entity<Person>()
                 .Map<Person>(m => m.Requires("Type").HasValue("Person"))
                 .Map<Contact>(m => m.Requires("Type").HasValue("Contact"));
+
+            modelBuilder.Entity<BlogPost>().Property(x => x.ShortTitle).HasMaxLength(100);
         }
 
         public static Context Sql()

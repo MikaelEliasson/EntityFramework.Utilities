@@ -160,7 +160,7 @@ namespace EntityFramework.Utilities
                     .Select(p => new ColumnMapping { 
                         NameInDatabase = p.ColumnName, 
                         NameOnObject = p.PropertyName, 
-                        DataType = p.DataType,
+                        DataType = p.DataTypeFull,
                         IsPrimaryKey = p.IsPrimaryKey
                      }).ToList();
 

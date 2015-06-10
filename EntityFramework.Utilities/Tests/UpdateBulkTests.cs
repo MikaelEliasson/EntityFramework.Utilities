@@ -34,6 +34,30 @@ namespace Tests
             }
         }
 
+        [TestMethod]
+        public void UpdateBulk_CanUpdateNvarcharWithLength()
+        {
+            Setup();
+
+            using (var db = Context.Sql())
+            {
+                var posts = db.BlogPosts.ToList();
+                foreach (var post in posts)
+                {
+                    post.ShortTitle = post.Title.Replace("1", "4").Replace("2", "8").Replace("3", "12");
+                }
+                EFBatchOperation.For(db, db.BlogPosts).UpdateAll(posts, spec => spec.ColumnsToUpdate(p => p.ShortTitle));
+            }
+
+            using (var db = Context.Sql())
+            {
+                var posts = db.BlogPosts.OrderBy(b => b.ID).ToList();
+                Assert.AreEqual("T4", posts[0].ShortTitle);
+                Assert.AreEqual("T8", posts[1].ShortTitle);
+                Assert.AreEqual("T12", posts[2].ShortTitle);
+            }
+        }
+
         private static void Setup()
         {
             using (var db = Context.Sql())
