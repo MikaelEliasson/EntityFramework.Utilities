@@ -76,6 +76,7 @@
     <Compile Include="ConnectionStringReader.cs" />
     <Compile Include="ConnectionStrings.cs" />
     <Compile Include="AttachAndModifyTest.cs" />
+    <Compile Include="Models\NumericTestObject.cs" />
     <Compile Include="UpdateBulkTests.cs" />
     <Compile Include="FakeDomain\Contact.cs" />
     <Compile Include="FakeDomain\Email.cs" />

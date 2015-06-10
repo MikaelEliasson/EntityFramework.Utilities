@@ -4,6 +4,7 @@ using EntityFramework.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.FakeDomain;
 using Tests.FakeDomain.Models;
+using Tests.Models;
 
 namespace Tests
 {
@@ -31,6 +32,45 @@ namespace Tests
                 Assert.AreEqual("T4", posts[0].Title);
                 Assert.AreEqual("T8", posts[1].Title);
                 Assert.AreEqual("T12", posts[2].Title);
+            }
+        }
+
+        [TestMethod]
+        public void UpdateBulk_CanUpdateNumerics()
+        {
+            using (var db = Context.Sql())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.ForceDelete();
+                }
+                db.Database.Create();
+
+                var list = new List<NumericTestObject>(){
+                    new NumericTestObject{ }
+                };
+
+                EFBatchOperation.For(db, db.NumericTestsObjects).InsertAll(list);
+            }
+
+            using (var db = Context.Sql())
+            {
+                var items = db.NumericTestsObjects.ToList();
+                foreach (var item in items)
+                {
+                    item.DecimalType = 1.1m;
+                    item.FloatType = 2.1f;
+                    item.NumericType = 3.1m;
+                }
+                EFBatchOperation.For(db, db.NumericTestsObjects).UpdateAll(items, spec => spec.ColumnsToUpdate(p => p.DecimalType, p => p.FloatType, p => p.NumericType));
+            }
+
+            using (var db = Context.Sql())
+            {
+                var item = db.NumericTestsObjects.First();
+                Assert.AreEqual(1.1m, item.DecimalType);
+                Assert.AreEqual(2.1f, item.FloatType);
+                Assert.AreEqual(3.1m, item.NumericType);
             }
         }
 
