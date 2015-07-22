@@ -198,7 +198,7 @@ namespace EntityFramework.Utilities
                     {
                         tableMapping.TPHConfiguration.Mappings.Add(
                             getClr(item.Fragments[0]),
-                            GetNonPublicPropertyValue(item.Fragments[0].Conditions[0], "Value").ToString()
+                            ((ValueConditionMapping)item.Fragments[0].Conditions[0]).Value.ToString()
                             );
                     }
                 }
@@ -243,14 +243,6 @@ namespace EntityFramework.Utilities
         private Type GetClrTypeFromTypeMapping(MetadataWorkspace metadata, ObjectItemCollection objectItemCollection, EntityTypeMapping mapping)
         {
             return GetClrType(metadata, objectItemCollection, mapping.EntityType ?? mapping.IsOfEntityTypes.First());
-        }
-
-
-        static object GetNonPublicPropertyValue(object o, string propertyName)
-        {
-            return o.GetType()
-              .GetProperty(propertyName, BindingFlags.NonPublic | BindingFlags.Instance)
-              .GetValue(o, null);
         }
 
         private static dynamic GetProperty(string property, object instance)
