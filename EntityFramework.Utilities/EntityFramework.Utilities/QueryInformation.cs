@@ -7,5 +7,6 @@ namespace EntityFramework.Utilities
         public string Table { get; set; }
         public string Alias { get; set; }
         public string WhereSql { get; set; }
+        public int Top { get; set; }
     }
 }
