@@ -23,7 +23,7 @@ namespace EntityFramework.Utilities
             }
             else
             {
-                return string.Format("DELETE TOP {0} FROM [{1}].[{2}] {3}", queryInfo.Top, queryInfo.Schema, queryInfo.Table, queryInfo.WhereSql);
+                return string.Format("DELETE TOP ({0}) FROM [{1}].[{2}] {3}", queryInfo.Top, queryInfo.Schema, queryInfo.Table, queryInfo.WhereSql);
             }
         }
 

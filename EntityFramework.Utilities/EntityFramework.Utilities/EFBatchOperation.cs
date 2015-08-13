@@ -55,6 +55,7 @@ namespace EntityFramework.Utilities
     public interface IEFBatchOperationFiltered<TContext, T>
     {
         int Delete();
+        int DeleteTop(int count);
         int Update<TP>(Expression<Func<T, TP>> prop, Expression<Func<T, TP>> modifier);
     }
     public static class EFBatchOperation
