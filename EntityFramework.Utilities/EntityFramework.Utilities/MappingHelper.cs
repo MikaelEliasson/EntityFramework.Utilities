@@ -299,17 +299,36 @@ namespace EntityFramework.Utilities
     {
         private static Dictionary<Type, EfMapping> cache = new Dictionary<Type, EfMapping>();
 
+        private static object lckObj = new object();
+
         public static EfMapping GetMappingsForContext(DbContext context)
         {
             var type = context.GetType();
+
             EfMapping mapping;
+
+            //Try our cache lookup.  If we find an item in the cache
+            //there is no reason to obtain a lock and limit this part 
+            //of the code to a single thread
             if (!cache.TryGetValue(type, out mapping))
             {
-                mapping = new EfMapping(context);
-                cache.Add(type, mapping);
+                //if the cache lookup fails lock so only a single thread
+                //at a time can access the add code
+                lock (lckObj)
+                {
+                    //Check the cache again.  If 2 threads failed the first cache lookup
+                    //the first thread will add the item to the cache
+                    //the second thread will wait on the lock and then pull the item from
+                    //cache.
+                    if (!cache.TryGetValue(type, out mapping))
+                    {
+                        mapping = new EfMapping(context);
+                        cache.Add(type, mapping);
+                    }
+                }
             }
+
             return mapping;
         }
-
     }
 }
