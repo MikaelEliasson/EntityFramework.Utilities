@@ -52,6 +52,10 @@ Any package from 0.2.0 and up should work.
 
 Nuget package https://www.nuget.org/packages/EFUtilities/ 
 
+### EF 7 or EF.Core 1.0
+
+Currently not working 
+
 ## Utility methods 
 
 These methods are small helpers that make certain things easier. Most of them work against context so they should be provider independent. It will be stated when this is not the case.
