@@ -94,6 +94,7 @@ namespace EntityFramework.Utilities
         public bool IsPrimaryKey { get; set; }
 
         public string DataTypeFull { get; set; }
+        public bool IsComputed { get; set; }
     }
 
     /// <summary>
@@ -155,7 +156,7 @@ namespace EntityFramework.Utilities
                 tableMapping.Schema = mappingToLookAt.Fragments[0].StoreEntitySet.Schema;
                 tableMapping.TableName = mappingToLookAt.Fragments[0].StoreEntitySet.Table ?? mappingToLookAt.Fragments[0].StoreEntitySet.Name;
                 typeMapping.TableMappings.Add(tableMapping);
-
+                
                 Action<Type, System.Data.Entity.Core.Mapping.PropertyMapping, string> recurse = null;
                 recurse = (t, item, path) =>
                 {
@@ -176,7 +177,8 @@ namespace EntityFramework.Utilities
                             DataType = scalar.Column.TypeName,
                             DataTypeFull = GetFullTypeName(scalar),
                             PropertyName = path + item.Property.Name,
-                            ForEntityType = t
+                            ForEntityType = t,
+                            IsComputed = scalar.Column.IsStoreGeneratedComputed
                         });
                     }
                 };
