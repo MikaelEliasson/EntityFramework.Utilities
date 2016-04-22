@@ -23,9 +23,10 @@ namespace PerformanceTests
             BatchIteration(25000);
             NormalIteration(25000);
             BatchIteration(50000);
-            //NormalIteration(50000);
+            NormalIteration(50000);
             BatchIteration(100000);
             NormalIteration(100000);
+            Console.ReadKey();
         }
 
 
@@ -124,7 +125,7 @@ namespace PerformanceTests
                 var stop = new Stopwatch();
                 var comments = GetEntities(count).ToList();                
                 stop.Start();
-                EFBatchOperation.For(db, db.Comments).InsertAll(comments);
+                EFBatchOperation.For(db, db.Comments).InsertAllReturnInserted(comments);
                 stop.Stop();
                 Console.WriteLine("Insert entities: " + stop.ElapsedMilliseconds + "ms");
 
@@ -140,7 +141,7 @@ namespace PerformanceTests
                     item.Reads = rand.Next(0, 9999999);
                 }
                 stop.Restart();
-                EFBatchOperation.For(db, db.Comments).UpdateAll(commentsFromDb, x => x.ColumnsToUpdate(c => c.Reads));
+                EFBatchOperation.For(db, db.Comments).UpdateAllReturnUpdated(commentsFromDb, x => x.ColumnsToUpdate(c => c.Reads));
                 stop.Stop();
                 Console.WriteLine("Bulk update all with a random read: " + stop.ElapsedMilliseconds + "ms");
 

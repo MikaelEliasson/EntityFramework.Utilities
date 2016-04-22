@@ -37,6 +37,30 @@ namespace Tests
         }
 
         [TestMethod]
+        public void UpdateBulk_UpdatesAllReturnsUpdated()
+        {
+            Setup();
+
+            IEnumerable<Comment> results;
+            using (var db = Context.Sql())
+            {
+                var comments = db.Comments.ToList();
+                foreach (var comment in comments)
+                {
+                    comment.Text= "Updated";
+                }
+                results = EFBatchOperation.For(db, db.Comments).UpdateAllReturnUpdated(comments, spec => spec.ColumnsToUpdate(p => p.Text));
+            }
+
+            using (var db = Context.Sql())
+            {
+                var comments = db.Comments.OrderBy(b => b.Id).ToList();
+                Assert.AreEqual("Updated",comments[0].Text);
+                Assert.AreEqual(results.Count(), comments.Count);
+            }
+        }
+
+        [TestMethod]
         public void UpdateBulk_CanUpdateTPH()
         {
             using (var db = Context.Sql())
@@ -193,7 +217,17 @@ namespace Tests
                     BlogPost.Create("T3")
                 };
 
-                EFBatchOperation.For(db, db.BlogPosts).InsertAll(list);
+                EFBatchOperation.For(db, db.BlogPosts).InsertAllReturnInserted(list);
+
+                var list2 = db.BlogPosts.ToList().SelectMany(bp => new[]
+                {
+                    Comment.Create(bp,"First Comment"),
+                    Comment.Create(bp,"Second Comment"),
+                    Comment.Create(bp,"Third Comment"),
+                    Comment.Create(bp,"Fourth Comment"),
+                }).ToList();
+
+                var test = EFBatchOperation.For(db, db.Comments).InsertAllReturnInserted(list2);
             }
         }
     }

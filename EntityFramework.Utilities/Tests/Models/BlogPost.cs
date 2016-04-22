@@ -12,8 +12,8 @@ namespace Tests.FakeDomain.Models
         public string ShortTitle { get; set; }
         public DateTime Created { get; set; }
         public int Reads { get; set; }
-        public AuthorInfo Author { get; set; }
-        public ICollection<Comment> Comments { get; set; }
+        public virtual AuthorInfo Author { get; set; }
+        public virtual ICollection<Comment> Comments { get; set; }
 
 
         public static BlogPost Create(string title, DateTime created)

@@ -94,6 +94,8 @@ namespace EntityFramework.Utilities
         public bool IsPrimaryKey { get; set; }
 
         public string DataTypeFull { get; set; }
+
+        public bool IsComplex => PropertyName.Contains(".");
     }
 
     /// <summary>
@@ -176,7 +178,8 @@ namespace EntityFramework.Utilities
                             DataType = scalar.Column.TypeName,
                             DataTypeFull = GetFullTypeName(scalar),
                             PropertyName = path + item.Property.Name,
-                            ForEntityType = t
+                            ForEntityType = t,
+                           
                         });
                     }
                 };

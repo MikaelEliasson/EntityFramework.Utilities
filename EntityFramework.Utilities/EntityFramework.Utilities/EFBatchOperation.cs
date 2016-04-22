@@ -21,7 +21,16 @@ namespace EntityFramework.Utilities
         /// <param name="items">The items to insert</param>
         /// <param name="connection">The DbConnection to use for the insert. Only needed when for example a profiler wraps the connection. Then you need to provide a connection of the type the provider use.</param>
         /// <param name="batchSize">The size of each batch. Default depends on the provider. SqlProvider uses 15000 as default</param>        
-        void InsertAll<TEntity>(IEnumerable<TEntity> items, DbConnection connection = null, int? batchSize = null) where TEntity : class, T; 
+        void InsertAll<TEntity>(IEnumerable<TEntity> items, DbConnection connection = null, int? batchSize = null) where TEntity : class, T;
+
+
+        /// <summary>
+        /// Bulk insert all items if the Provider supports it. Otherwise it will use the default insert unless Configuration.DisableDefaultFallback is set to true in which case it would throw an exception.
+        /// </summary>
+        /// <param name="items">The items to insert</param>
+        /// <param name="connection">The DbConnection to use for the insert. Only needed when for example a profiler wraps the connection. Then you need to provide a connection of the type the provider use.</param>
+        /// <param name="batchSize">The size of each batch. Default depends on the provider. SqlProvider uses 15000 as default</param>        
+        IEnumerable<TEntity> InsertAllReturnInserted<TEntity>(IEnumerable<TEntity> items, DbConnection connection = null, int? batchSize = null) where TEntity : class, T;
         IEFBatchOperationFiltered<TContext, T> Where(Expression<Func<T, bool>> predicate);
 
 
@@ -34,6 +43,18 @@ namespace EntityFramework.Utilities
         /// <param name="connection">The DbConnection to use for the insert. Only needed when for example a profiler wraps the connection. Then you need to provide a connection of the type the provider use.</param>
         /// <param name="batchSize">The size of each batch. Default depends on the provider. SqlProvider uses 15000 as default</param>
         void UpdateAll<TEntity>(IEnumerable<TEntity> items, Action<UpdateSpecification<TEntity>> updateSpecification, DbConnection connection = null, int? batchSize = null) where TEntity : class, T;
+
+
+
+        /// <summary>
+        /// Bulk update all items if the Provider supports it. Otherwise it will use the default update unless Configuration.DisableDefaultFallback is set to true in which case it would throw an exception.
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <param name="items">The items to update</param>
+        /// <param name="updateSpecification">Define which columns to update</param>
+        /// <param name="connection">The DbConnection to use for the insert. Only needed when for example a profiler wraps the connection. Then you need to provide a connection of the type the provider use.</param>
+        /// <param name="batchSize">The size of each batch. Default depends on the provider. SqlProvider uses 15000 as default</param>
+        IEnumerable<TEntity> UpdateAllReturnUpdated<TEntity>(IEnumerable<TEntity> items, Action<UpdateSpecification<TEntity>> updateSpecification, DbConnection connection = null, int? batchSize = null) where TEntity : class, T;
     }
 
     public class UpdateSpecification<T>
@@ -114,6 +135,8 @@ namespace EntityFramework.Utilities
                 var typeMapping = mapping.TypeMappings[typeof(T)];
                 var tableMapping = typeMapping.TableMappings.First();
 
+                var isComplext = tableMapping.PropertyMappings.Any(x => x.IsComplex);
+
                 var properties = tableMapping.PropertyMappings
                     .Where(p => currentType.IsSubclassOf(p.ForEntityType) || p.ForEntityType == currentType)
                     .Select(p => new ColumnMapping { NameInDatabase = p.ColumnName, NameOnObject = p.PropertyName }).ToList();
@@ -133,6 +156,49 @@ namespace EntityFramework.Utilities
                 Configuration.Log("Found provider: " + (provider == null ? "[]" : provider.GetType().Name) + " for " + connectionToUse.GetType().Name);
                 Fallbacks.DefaultInsertAll(context, items);
             }
+        }
+
+        public IEnumerable<TEntity> InsertAllReturnInserted<TEntity>(IEnumerable<TEntity> items, DbConnection connection = null, int? batchSize = null) where TEntity : class, T
+        {
+            var con = context.Connection as EntityConnection;
+            if (con == null && connection == null)
+            {
+                Configuration.Log("No provider could be found because the Connection didn't implement System.Data.EntityClient.EntityConnection");
+                Fallbacks.DefaultInsertAll(context, items);
+            }
+
+            var connectionToUse = connection ?? con.StoreConnection;
+            var currentType = typeof(TEntity);
+            var provider = Configuration.Providers.FirstOrDefault(p => p.CanHandle(connectionToUse));
+            if (provider != null && provider.CanInsert)
+            {
+
+                var mapping = EntityFramework.Utilities.EfMappingFactory.GetMappingsForContext(this.dbContext);
+                var typeMapping = mapping.TypeMappings[typeof(T)];
+                var tableMapping = typeMapping.TableMappings.First();
+
+                var complex = tableMapping.PropertyMappings.Any(x => x.IsComplex);
+
+                var properties = tableMapping.PropertyMappings
+                    .Where(p => currentType.IsSubclassOf(p.ForEntityType) || p.ForEntityType == currentType)
+                    .Select(p => new ColumnMapping { NameInDatabase = p.ColumnName, NameOnObject = p.PropertyName, DataType=p.DataType,IsPrimaryKey = p.IsPrimaryKey }).ToList();
+                if (tableMapping.TPHConfiguration != null)
+                {
+                    properties.Add(new ColumnMapping
+                    {
+                        NameInDatabase = tableMapping.TPHConfiguration.ColumnName,
+                        StaticValue = tableMapping.TPHConfiguration.Mappings[typeof(TEntity)]
+                    });
+                }
+
+                return provider.InsertItemsReturnInserted(items, tableMapping.Schema, tableMapping.TableName, properties, connectionToUse, batchSize,dbContext);
+            }
+            else
+            {
+                Configuration.Log("Found provider: " + (provider == null ? "[]" : provider.GetType().Name) + " for " + connectionToUse.GetType().Name);
+                Fallbacks.DefaultInsertAll(context, items);
+            }
+            return new List<TEntity>();
         }
 
 
@@ -172,6 +238,47 @@ namespace EntityFramework.Utilities
             {
                 Configuration.Log("Found provider: " + (provider == null ? "[]" : provider.GetType().Name) + " for " + connectionToUse.GetType().Name);
                 Fallbacks.DefaultInsertAll(context, items);
+            }
+        }
+
+        public IEnumerable<TEntity> UpdateAllReturnUpdated<TEntity>(IEnumerable<TEntity> items, Action<UpdateSpecification<TEntity>> updateSpecification, DbConnection connection = null, int? batchSize = null) where TEntity : class, T
+        {
+            var con = context.Connection as EntityConnection;
+            if (con == null && connection == null)
+            {
+                Configuration.Log("No provider could be found because the Connection didn't implement System.Data.EntityClient.EntityConnection");
+                Fallbacks.DefaultInsertAll(context, items);
+            }
+
+            var connectionToUse = connection ?? con.StoreConnection;
+            var currentType = typeof(TEntity);
+            var provider = Configuration.Providers.FirstOrDefault(p => p.CanHandle(connectionToUse));
+            if (provider != null && provider.CanBulkUpdate)
+            {
+
+                var mapping = EfMappingFactory.GetMappingsForContext(this.dbContext);
+                var typeMapping = mapping.TypeMappings[typeof(T)];
+                var tableMapping = typeMapping.TableMappings.First();
+                var complex = tableMapping.PropertyMappings.Any(x => x.IsComplex);
+                var properties = tableMapping.PropertyMappings
+                    .Where(p => currentType.IsSubclassOf(p.ForEntityType) || p.ForEntityType == currentType)
+                    .Select(p => new ColumnMapping
+                    {
+                        NameInDatabase = p.ColumnName,
+                        NameOnObject = p.PropertyName,
+                        DataType = p.DataTypeFull,
+                        IsPrimaryKey = p.IsPrimaryKey
+                    }).ToList();
+
+                var spec = new UpdateSpecification<TEntity>();
+                updateSpecification(spec);
+                return provider.UpdateItemsReturnUpdated(items, tableMapping.Schema, tableMapping.TableName, properties, connectionToUse, batchSize, spec, dbContext);
+            }
+            else
+            {
+                Configuration.Log("Found provider: " + (provider == null ? "[]" : provider.GetType().Name) + " for " + connectionToUse.GetType().Name);
+                Fallbacks.DefaultInsertAll(context, items);
+                return null;
             }
         }
 
