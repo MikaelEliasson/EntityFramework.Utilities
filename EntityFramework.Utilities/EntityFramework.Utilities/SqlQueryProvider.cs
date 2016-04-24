@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
@@ -13,7 +14,8 @@ namespace EntityFramework.Utilities
         public bool CanDelete { get { return true; } }
         public bool CanUpdate { get { return true; } }
         public bool CanInsert { get { return true; } }
-
+        public bool CanBulkUpdate { get { return true; } }
+        public bool CanBulkUpdateAndReturnUpdated { get { return true; } }
         public string GetDeleteQuery(QueryInformation queryInfo)
         {
             return string.Format("DELETE FROM [{0}].[{1}] {2}", queryInfo.Schema, queryInfo.Table, queryInfo.WhereSql);
@@ -46,7 +48,7 @@ namespace EntityFramework.Utilities
             return string.Format("UPDATE [{0}].[{1}] SET {2} {3}", predicateQueryInfo.Schema, predicateQueryInfo.Table, updateSql, predicateQueryInfo.WhereSql);
         }
 
-        public void InsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection)
+        public void InsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize)
         {
             using (var reader = new EFDataReader<T>(items, properties))
             {
@@ -57,14 +59,14 @@ namespace EntityFramework.Utilities
                 }
                 using (SqlBulkCopy copy = new SqlBulkCopy(con))
                 {
-                    copy.BatchSize = Math.Min(reader.RecordsAffected, 15000); //default batch size
+                    copy.BatchSize = Math.Min(reader.RecordsAffected, batchSize ?? 15000); //default batch size
                     if (!string.IsNullOrWhiteSpace(schema))
                     {
                         copy.DestinationTableName = string.Format("[{0}].[{1}]", schema, tableName);
                     }
                     else
                     {
-                        copy.DestinationTableName = tableName;
+                        copy.DestinationTableName = "[" + tableName + "]";
                     }
                     
                     copy.NotifyAfter = 0;
@@ -79,6 +81,149 @@ namespace EntityFramework.Utilities
             }
         }
 
+        public IEnumerable<T> InsertItemsReturnInserted<T>(IEnumerable<T> items, string schema, string tableName,
+            IList<ColumnMapping> properties,
+            DbConnection storeConnection, int? batchSize, DbContext context)
+        {
+            var tempTableName = "temp_" + tableName + "_" + DateTime.Now.Ticks;
+             var columns = properties.Select(c => "[" + c.NameInDatabase + "] " + c.DataType);
+            var selectColumns = properties.Where(x=>!x.IsPrimaryKey).Select(c => "[" + c.NameInDatabase + "] ").ToList();
+            var str = $"CREATE TABLE {schema}.[{tempTableName}]({string.Join(", ", columns)})";
+
+            var con = storeConnection as SqlConnection;
+            if (con.State != System.Data.ConnectionState.Open)
+            {
+                con.Open();
+            }
+
+             
+            var mergeCommand =
+                $@"INSERT INTO [{tableName}] ({string.Join(", ", selectColumns)})
+                OUTPUT INSERTED.*
+                SELECT {string.Join(", ", selectColumns)} FROM [{tempTableName}] TEMP";
+
+            using (var createCommand = new SqlCommand(str, con))
+            using (var dCommand = new SqlCommand($"DROP table {schema}.[{tempTableName}]", con))
+            {
+                createCommand.ExecuteNonQuery();
+                InsertItems(items, schema, tempTableName, properties, storeConnection, batchSize);
+                var results = new List<T>();
+                try
+                {
+                    results = context.Database.SqlQuery<T>(mergeCommand).ToList();
+                }
+                catch (Exception ex)
+                {
+                    Configuration.Log("error");
+                }
+                finally
+                {
+                    dCommand.ExecuteNonQuery();
+                }
+                //mCommand.ExecuteNonQuery();
+
+                return results;
+            }
+        }
+
+        public void UpdateItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, UpdateSpecification<T> updateSpecification)
+        {
+            var tempTableName = "temp_" + tableName + "_" + DateTime.Now.Ticks;
+            var columnsToUpdate = updateSpecification.Properties.Select(p => p.GetPropertyName()).ToDictionary(x => x);
+            var filtered = properties.Where(p => columnsToUpdate.ContainsKey(p.NameOnObject) || p.IsPrimaryKey).ToList();
+            var columns = filtered.Select(c => "[" + c.NameInDatabase + "] " + c.DataType);
+            var pkConstraint = string.Join(", ", properties.Where(p => p.IsPrimaryKey).Select(c => "[" + c.NameInDatabase + "]"));
+
+            var str = string.Format("CREATE TABLE {0}.[{1}]({2}, PRIMARY KEY ({3}))", schema, tempTableName, string.Join(", ", columns), pkConstraint);
+
+            var con = storeConnection as SqlConnection;
+            if (con.State != System.Data.ConnectionState.Open)
+            {
+                con.Open();
+            }
+
+            var setters = string.Join(",", filtered.Where(c => !c.IsPrimaryKey).Select(c => "[" + c.NameInDatabase + "] = TEMP.[" + c.NameInDatabase + "]"));
+            var pks = properties.Where(p => p.IsPrimaryKey).Select(x => "ORIG.[" + x.NameInDatabase + "] = TEMP.[" + x.NameInDatabase + "]");
+            var filter = string.Join(" and ",  pks);
+            var mergeCommand =  string.Format(@"UPDATE [{0}]
+                SET
+                    {3}
+                FROM
+                    [{0}] ORIG
+                INNER JOIN
+                     [{1}] TEMP
+                ON 
+                    {2}", tableName, tempTableName, filter, setters);
+
+            using (var createCommand = new SqlCommand(str, con))
+            using (var mCommand = new SqlCommand(mergeCommand, con))
+            using (var dCommand = new SqlCommand(string.Format("DROP table {0}.[{1}]", schema, tempTableName), con))
+            {
+                createCommand.ExecuteNonQuery();
+                InsertItems(items, schema, tempTableName, filtered, storeConnection, batchSize);
+                mCommand.ExecuteNonQuery();
+                dCommand.ExecuteNonQuery();
+            }
+
+            
+        }
+
+
+        public IEnumerable<T> UpdateItemsReturnUpdated<T>(IEnumerable<T> items, string schema, string tableName,
+            IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize,
+            UpdateSpecification<T> updateSpecification, DbContext context)
+        {
+            var tempTableName = "temp_" + tableName + "_" + DateTime.Now.Ticks;
+            var columnsToUpdate = updateSpecification.Properties.Select(p => p.GetPropertyName()).ToDictionary(x => x);
+            var filtered = properties.Where(p => columnsToUpdate.ContainsKey(p.NameOnObject) || p.IsPrimaryKey).ToList();
+            var columns = filtered.Select(c => "[" + c.NameInDatabase + "] " + c.DataType);
+            var pkConstraint = string.Join(", ", properties.Where(p => p.IsPrimaryKey).Select(c => "[" + c.NameInDatabase + "]"));
+
+            var str = string.Format("CREATE TABLE {0}.[{1}]({2}, PRIMARY KEY ({3}))", schema, tempTableName, string.Join(", ", columns), pkConstraint);
+
+            var con = storeConnection as SqlConnection;
+            if (con.State != System.Data.ConnectionState.Open)
+            {
+                con.Open();
+            }
+
+            var setters = string.Join(",", filtered.Where(c => !c.IsPrimaryKey).Select(c => "[" + c.NameInDatabase + "] = TEMP.[" + c.NameInDatabase + "]"));
+            var pks = properties.Where(p => p.IsPrimaryKey).Select(x => "ORIG.[" + x.NameInDatabase + "] = TEMP.[" + x.NameInDatabase + "]");
+            var filter = string.Join(" and ", pks);
+            var mergeCommand = string.Format(@"UPDATE [{0}]
+                SET
+                    {3}
+                OUTPUT INSERTED.*
+                FROM
+                    [{0}] ORIG
+                INNER JOIN
+                     [{1}] TEMP
+                ON 
+                    {2}", tableName, tempTableName, filter, setters);
+
+            using (var createCommand = new SqlCommand(str, con))
+            using (var dCommand = new SqlCommand(string.Format("DROP table {0}.[{1}]", schema, tempTableName), con))
+            {
+                createCommand.ExecuteNonQuery();
+                InsertItems(items, schema, tempTableName, filtered, storeConnection, batchSize);
+                var results = new List<T>();
+                try
+                {
+                    results = context.Database.SqlQuery<T>(mergeCommand).ToList();
+                }
+                catch (Exception ex)
+                {
+                    Configuration.Log("error");
+ 
+                }
+                finally
+                {
+                    dCommand.ExecuteNonQuery();
+                }
+                 
+                return results;
+            }
+        }
 
         public bool CanHandle(System.Data.Common.DbConnection storeConnection)
         {
@@ -106,5 +251,6 @@ namespace EntityFramework.Utilities
             }
             return queryInfo;
         }
+
     }
 }

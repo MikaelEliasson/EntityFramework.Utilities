@@ -10,6 +10,16 @@ namespace Tests.FakeDomain.Models
         public int Id { get; set; }
         public string Text { get; set; }
         public int PostId { get; set; }
-        public BlogPost Post { get; set; }
+        public virtual BlogPost Post { get; set; }
+
+        public static Comment Create(BlogPost blogPost, string comment)
+        {
+            return new Comment
+            {
+                Post = blogPost,
+                PostId = blogPost.ID,
+                Text = comment
+            };
+        }
     }
 }

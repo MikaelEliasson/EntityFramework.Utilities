@@ -4,12 +4,68 @@ using EntityFramework.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.FakeDomain;
 using Tests.FakeDomain.Models;
+using System;
 
 namespace Tests
 {
     [TestClass]
     public class InsertTests 
     {
+        [TestMethod]
+        public void InsertAll_InsertItems_WithTypeHierarchy()
+        {
+            using (var db = Context.Sql())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.Delete();
+                }
+                db.Database.Create();
+
+                List<Contact> people = new List<Contact>();
+                people.Add(Contact.Build("FN1", "LN1", "Director"));
+                people.Add(Contact.Build("FN2", "LN2", "Associate"));
+                people.Add(Contact.Build("FN3", "LN3", "Vice President"));
+
+                EFBatchOperation.For(db, db.People).InsertAll(people);
+            }
+
+            using (var db = Context.Sql())
+            {
+                var contacts = db.People.OfType<Contact>().OrderBy(c => c.FirstName).ToList();
+                Assert.AreEqual(3, contacts.Count);
+                Assert.AreEqual("FN1", contacts.First().FirstName);
+                Assert.AreEqual("Director", contacts.First().Title);
+            }
+        }
+
+        [TestMethod]
+        public void InsertAll_InsertItems_WithTypeHierarchyBase()
+        {
+            using (var db = Context.Sql())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.Delete();
+                }
+                db.Database.Create();
+
+                List<Person> people = new List<Person>();
+                people.Add(Person.Build("FN1", "LN1"));
+                people.Add(Person.Build("FN2", "LN2"));
+                people.Add(Person.Build("FN3", "LN3"));
+
+                EFBatchOperation.For(db, db.People).InsertAll(people);
+            }
+
+            using (var db = Context.Sql())
+            {
+                var contacts = db.People.OrderBy(c => c.FirstName).ToList();
+                Assert.AreEqual(3, contacts.Count);
+                Assert.AreEqual("FN1", contacts.First().FirstName);
+            }
+        }
+
         [TestMethod]
         public void InsertAll_InsertsItems()
         {
@@ -33,6 +89,7 @@ namespace Tests
             using (var db = Context.Sql())
             {
                 Assert.AreEqual(3, db.BlogPosts.Count());
+                Assert.AreEqual("m@m.com", db.BlogPosts.First().Author.Email);
             }
         }
 
@@ -127,7 +184,7 @@ namespace Tests
         public void InsertAll_NoProvider_UsesDefaultInsert()
         {
             string fallbackText = null;
-
+            Configuration.DisableDefaultFallback = false;
             Configuration.Log = str => fallbackText = str;
 
             using (var db = Context.SqlCe())

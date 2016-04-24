@@ -7,6 +7,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using Tests.FakeDomain;
+using Tests.FakeDomain.Models;
 
 namespace Tests
 {
@@ -29,6 +30,25 @@ namespace Tests
                 Assert.AreEqual(2, fn2.PhoneNumbers.Count);
                 Assert.AreEqual('2', fn2.PhoneNumbers.First().Number.First());
                 Assert.AreEqual(0, fn3.PhoneNumbers.Count);
+            }
+        }
+
+        [TestMethod]
+        public void SingleInclude_LoadsChildren_BlogPost()
+        {
+            SetupSmallTestSet();
+            using (var db = Context.Sql())
+            {
+                var result = db.BlogPosts.IncludeEFU(db, x => x.Comments).ToList();
+                var bp1 = result.First(x => x.Title == "BP1");
+                var bp2 = result.First(x => x.Title == "BP2");
+                var bp3 = result.First(x => x.Title == "BP3");
+
+                Assert.AreEqual(1, bp1.Comments.Count);
+                Assert.AreEqual("C1", bp1.Comments.First().Text);
+                Assert.AreEqual(2, bp2.Comments.Count);
+                Assert.AreEqual("C2", bp2.Comments.First().Text);
+                Assert.AreEqual(3, bp3.Comments.Count);
             }
         }
 
@@ -475,6 +495,7 @@ namespace Tests
             {
                 FirstName = "FN1",
                 LastName = "LN1",
+                Title = "Director",
                 Id = Guid.NewGuid(),
                 BirthDate = DateTime.Today,
                 PhoneNumbers = new List<PhoneNumber>(){
@@ -492,6 +513,7 @@ namespace Tests
             {
                 FirstName = "FN2",
                 LastName = "LN2",
+                Title = "Associate",
                 Id = Guid.NewGuid(),
                 BirthDate = DateTime.Today,
                 PhoneNumbers = new List<PhoneNumber>(){
@@ -514,6 +536,7 @@ namespace Tests
             {
                 FirstName = "FN3",
                 LastName = "LN3",
+                Title = "Vice President",
                 Id = Guid.NewGuid(),
                 BirthDate = DateTime.Today,
                 Emails = new List<Email>()
@@ -522,6 +545,30 @@ namespace Tests
                     new Email{Id = Guid.NewGuid(), Address = "m32@mail.com" },
                 }
             });
+
+            var blogPost1 = BlogPost.Create("BP1");
+            blogPost1.Comments = new List<Comment>()
+                {
+                    new Comment() { Text = "C1" }
+                };
+            db.BlogPosts.Add(blogPost1);
+
+            var blogPost2 = BlogPost.Create("BP2");
+            blogPost2.Comments = new List<Comment>()
+                {
+                    new Comment() { Text = "C2" },
+                    new Comment() { Text = "C3" }
+                };
+            db.BlogPosts.Add(blogPost2);
+
+            var blogPost3 = BlogPost.Create("BP3");
+            blogPost3.Comments = new List<Comment>()
+                {
+                    new Comment() { Text = "C4" },
+                    new Comment() { Text = "C5" },
+                    new Comment() { Text = "C6" }
+                };
+            db.BlogPosts.Add(blogPost3);
 
             db.SaveChanges();
         }
