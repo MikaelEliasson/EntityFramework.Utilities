@@ -21,7 +21,7 @@ namespace EntityFramework.Utilities
         /// <param name="items">The items to insert</param>
         /// <param name="connection">The DbConnection to use for the insert. Only needed when for example a profiler wraps the connection. Then you need to provide a connection of the type the provider use.</param>
         /// <param name="batchSize">The size of each batch. Default depends on the provider. SqlProvider uses 15000 as default</param>        
-        void InsertAll<TEntity>(IEnumerable<TEntity> items, DbConnection connection = null, int? batchSize = null) where TEntity : class, T; 
+        void InsertAll<TEntity>(IEnumerable<TEntity> items, DbConnection connection = null, int? batchSize = null) where TEntity : class, T;
         IEFBatchOperationFiltered<TContext, T> Where(Expression<Func<T, bool>> predicate);
 
 
@@ -66,7 +66,7 @@ namespace EntityFramework.Utilities
             return EFBatchOperation<TContext, T>.For(context, set);
         }
     }
-    public class EFBatchOperation<TContext, T> : IEFBatchOperationBase<TContext, T>, IEFBatchOperationFiltered<TContext, T> 
+    public class EFBatchOperation<TContext, T> : IEFBatchOperationBase<TContext, T>, IEFBatchOperationFiltered<TContext, T>
         where T : class
         where TContext : DbContext
     {
@@ -82,9 +82,7 @@ namespace EntityFramework.Utilities
             this.set = set;
         }
 
-        public static IEFBatchOperationBase<TContext, T> For<TContext, T>(TContext context, IDbSet<T> set)
-            where TContext : DbContext
-            where T : class
+        public static IEFBatchOperationBase<TContext, T> For(TContext context, IDbSet<T> set)
         {
             return new EFBatchOperation<TContext, T>(context, set);
         }
@@ -157,12 +155,13 @@ namespace EntityFramework.Utilities
 
                 var properties = tableMapping.PropertyMappings
                     .Where(p => currentType.IsSubclassOf(p.ForEntityType) || p.ForEntityType == currentType)
-                    .Select(p => new ColumnMapping { 
-                        NameInDatabase = p.ColumnName, 
-                        NameOnObject = p.PropertyName, 
+                    .Select(p => new ColumnMapping
+                    {
+                        NameInDatabase = p.ColumnName,
+                        NameOnObject = p.PropertyName,
                         DataType = p.DataTypeFull,
                         IsPrimaryKey = p.IsPrimaryKey
-                     }).ToList();
+                    }).ToList();
 
                 var spec = new UpdateSpecification<TEntity>();
                 updateSpecification(spec);
@@ -198,12 +197,15 @@ namespace EntityFramework.Utilities
                 var queryInformation = provider.GetQueryInformation<T>(query);
 
                 var delete = provider.GetDeleteQuery(queryInformation);
-                var parameters = query.Parameters.Select(p => new SqlParameter { Value = p.Value, ParameterName = p.Name }).ToArray<object>();
+                var parameters = query.Parameters
+                    .Select(p => provider.ParameterFactory(p.Name, p.Value))
+                    .ToArray<object>();
+
                 return context.ExecuteStoreCommand(delete, parameters);
             }
             else
             {
-                Configuration.Log("Found provider: " + (provider == null ? "[]" : provider.GetType().Name ) + " for " + con.StoreConnection.GetType().Name);
+                Configuration.Log("Found provider: " + (provider == null ? "[]" : provider.GetType().Name) + " for " + con.StoreConnection.GetType().Name);
                 return Fallbacks.DefaultDelete(context, this.predicate);
             }
         }
@@ -231,10 +233,10 @@ namespace EntityFramework.Utilities
                 var mqueryInfo = provider.GetQueryInformation<T>(mquery);
 
                 var update = provider.GetUpdateQuery(queryInformation, mqueryInfo);
-                
+
                 var parameters = query.Parameters
                     .Concat(mquery.Parameters)
-                    .Select(p => new SqlParameter { Value = p.Value, ParameterName = p.Name })
+                    .Select(p => provider.ParameterFactory(p.Name, p.Value))
                     .ToArray<object>();
 
                 return context.ExecuteStoreCommand(update, parameters);
@@ -247,6 +249,6 @@ namespace EntityFramework.Utilities
         }
 
 
-     
+
     }
 }

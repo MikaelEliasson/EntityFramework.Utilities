@@ -151,5 +151,9 @@ namespace EntityFramework.Utilities
             return queryInfo;
         }
 
+        public DbParameter ParameterFactory(string name, object value)
+        {
+            return new SqlParameter(name, value);
+        }
     }
 }
