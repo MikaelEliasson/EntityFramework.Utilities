@@ -232,14 +232,27 @@ namespace EntityFramework.Utilities
                 var mquery = ((ObjectQuery<T>)context.CreateObjectSet<T>().Where(updateExpression));
                 var mqueryInfo = provider.GetQueryInformation<T>(mquery);
 
+                List<Tuple<string, string>> renameParameters = new List<Tuple<string, string>>();
+                const string param = "p__update__";
+
+                List<object> parameters = new List<object>();
+                int i = 0;
+                foreach(var p in query.Parameters.Concat(mquery.Parameters))
+                {
+                    string newName = param + (i++);
+                    renameParameters.Add(Tuple.Create(p.Name, newName));
+                    parameters.Add(provider.ParameterFactory(newName, p.Value));
+                }
+                
+                foreach(var ren in renameParameters)
+                {
+                    queryInformation.WhereSql = queryInformation.WhereSql.Replace(ren.Item1, ren.Item2);
+                    mqueryInfo.WhereSql = mqueryInfo.WhereSql.Replace(ren.Item1, ren.Item2);
+                }
+
                 var update = provider.GetUpdateQuery(queryInformation, mqueryInfo);
 
-                var parameters = query.Parameters
-                    .Concat(mquery.Parameters)
-                    .Select(p => provider.ParameterFactory(p.Name, p.Value))
-                    .ToArray<object>();
-
-                return context.ExecuteStoreCommand(update, parameters);
+                return context.ExecuteStoreCommand(update, parameters.ToArray());
             }
             else
             {
