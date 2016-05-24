@@ -237,7 +237,7 @@ namespace EntityFramework.Utilities
 
                 List<object> parameters = new List<object>();
                 int i = 0;
-                foreach(var p in query.Parameters.Concat(mquery.Parameters))
+                foreach(var p in query.Parameters)
                 {
                     string newName = param + (i++);
                     renameParameters.Add(Tuple.Create(p.Name, newName));
@@ -247,6 +247,19 @@ namespace EntityFramework.Utilities
                 foreach(var ren in renameParameters)
                 {
                     queryInformation.WhereSql = queryInformation.WhereSql.Replace(ren.Item1, ren.Item2);
+                }
+
+                renameParameters.Clear();
+
+                foreach (var p in mquery.Parameters)
+                {
+                    string newName = param + (i++);
+                    renameParameters.Add(Tuple.Create(p.Name, newName));
+                    parameters.Add(provider.ParameterFactory(newName, p.Value));
+                }
+
+                foreach (var ren in renameParameters)
+                {
                     mqueryInfo.WhereSql = mqueryInfo.WhereSql.Replace(ren.Item1, ren.Item2);
                 }
 
