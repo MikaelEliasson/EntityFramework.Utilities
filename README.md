@@ -1,5 +1,7 @@
 ## The goal
 
+[![Join the chat at https://gitter.im/MikaelEliasson/EntityFramework.Utilities](https://badges.gitter.im/MikaelEliasson/EntityFramework.Utilities.svg)](https://gitter.im/MikaelEliasson/EntityFramework.Utilities?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Performance! EF is quite fast in many cases nowdays but doing CUD over many entities is slooooow. This is a solution for that.  
 
 EntityFramework.Utilities provides some batch operations for using EF that the EF team hasn't yet added for us. Suggestions are welcome! Pull requests are even more welcome:)
