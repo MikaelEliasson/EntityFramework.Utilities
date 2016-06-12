@@ -17,7 +17,14 @@ namespace EntityFramework.Utilities
 
         public string GetDeleteQuery(QueryInformation queryInfo)
         {
-            return string.Format("DELETE FROM [{0}].[{1}] {2}", queryInfo.Schema, queryInfo.Table, queryInfo.WhereSql);
+            if (queryInfo.Top == null)
+            {
+                return string.Format("DELETE FROM [{0}].[{1}] {2}", queryInfo.Schema, queryInfo.Table, queryInfo.WhereSql);
+            }
+            else
+            {
+                return string.Format("DELETE TOP ({0}) FROM [{1}].[{2}] {3}", queryInfo.Top, queryInfo.Schema, queryInfo.Table, queryInfo.WhereSql);
+            }
         }
 
         public string GetUpdateQuery(QueryInformation predicateQueryInfo, QueryInformation modificationQueryInfo)

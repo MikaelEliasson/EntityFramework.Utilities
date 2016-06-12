@@ -192,5 +192,40 @@ namespace Tests
             Assert.IsNotNull(fallbackText);
         }
 
+        [TestMethod]
+        public void DeleteAll_Top_DeletesAllMatchesAndNothingElse()
+        {
+            using (var db = Context.Sql())
+            {
+                if (db.Database.Exists())
+                {
+                    db.Database.Delete();
+                }
+                db.Database.Create();
+
+                db.BlogPosts.Add(BlogPost.Create("T1"));
+                db.BlogPosts.Add(BlogPost.Create("T1"));
+                db.BlogPosts.Add(BlogPost.Create("T1"));
+                db.BlogPosts.Add(BlogPost.Create("T1"));
+                db.BlogPosts.Add(BlogPost.Create("T2"));
+
+                db.SaveChanges();
+            }
+
+            int count;
+            using (var db = Context.Sql())
+            {
+                count = EFBatchOperation.For(db, db.BlogPosts).Where(b => b.Title == "T1").DeleteTop(2);
+                Assert.AreEqual(2, count);
+            }
+
+            using (var db = Context.Sql())
+            {
+                var posts = db.BlogPosts.ToList();
+                Assert.AreEqual(3, posts.Count);
+                Assert.AreEqual(1, posts.Count(p => p.Title == "T2"));
+            }
+        }
+
     }
 }

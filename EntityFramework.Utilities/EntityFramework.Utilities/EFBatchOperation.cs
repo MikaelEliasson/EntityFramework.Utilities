@@ -55,6 +55,7 @@ namespace EntityFramework.Utilities
     public interface IEFBatchOperationFiltered<TContext, T>
     {
         int Delete();
+        int DeleteTop(int count);
         int Update<TP>(Expression<Func<T, TP>> prop, Expression<Func<T, TP>> modifier);
     }
     public static class EFBatchOperation
@@ -74,6 +75,7 @@ namespace EntityFramework.Utilities
         private DbContext dbContext;
         private IDbSet<T> set;
         private Expression<Func<T, bool>> predicate;
+        private int? deleteTop;
 
         private EFBatchOperation(TContext context, IDbSet<T> set)
         {
@@ -181,6 +183,12 @@ namespace EntityFramework.Utilities
             return this;
         }
 
+        public int DeleteTop(int count)
+        {
+            this.deleteTop = count;
+            return Delete();
+        }
+
         public int Delete()
         {
             var con = context.Connection as EntityConnection;
@@ -196,6 +204,11 @@ namespace EntityFramework.Utilities
                 var set = context.CreateObjectSet<T>();
                 var query = (ObjectQuery<T>)set.Where(this.predicate);
                 var queryInformation = provider.GetQueryInformation<T>(query);
+
+                if (this.deleteTop.HasValue)
+                {
+                    queryInformation.Top = this.deleteTop.Value;
+                }
 
                 var delete = provider.GetDeleteQuery(queryInformation);
                 var parameters = query.Parameters.Select(p => new SqlParameter { Value = p.Value, ParameterName = p.Name }).ToArray<object>();
