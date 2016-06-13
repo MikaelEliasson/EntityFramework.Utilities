@@ -121,6 +121,8 @@ namespace EntityFramework.Utilities
 
         public bool IsPrimaryKey { get; set; }
 
+        public string DataTypeFull { get; set; }
+
         public bool IsStoreGenerated { get; set; }
 
         public PropertyMapping Clone()
@@ -215,6 +217,7 @@ namespace EntityFramework.Utilities
                         {
                             ColumnName = scalar.Column.Name,
                             DataType = scalar.Column.TypeName,
+                            DataTypeFull = GetFullTypeName(scalar),
                             PropertyName = path + item.Property.Name,
                             ForEntityType = t,
                             IsStoreGenerated = scalar.Column.IsStoreGeneratedIdentity
@@ -222,7 +225,8 @@ namespace EntityFramework.Utilities
                     }
                 };
 
-                Func<MappingFragment, Type> getClr = m => {
+                Func<MappingFragment, Type> getClr = m =>
+                {
                     return GetClrTypeFromTypeMapping(metadata, objectItemCollection, m.TypeMapping as EntityTypeMapping);
                 };
 
@@ -232,7 +236,7 @@ namespace EntityFramework.Utilities
                     tableMapping.TPHConfiguration = new TPHConfiguration
                        {
                            ColumnName = withConditions.First().Fragments[0].Conditions[0].Column.Name,
-                           Mappings = new Dictionary<Type,string>()
+                           Mappings = new Dictionary<Type, string>()
                        };
                     foreach (var item in withConditions)
                     {
@@ -263,6 +267,21 @@ namespace EntityFramework.Utilities
                     }
                 }
             }
+        }
+
+        private string GetFullTypeName(ScalarPropertyMapping scalar)
+        {
+            if (scalar.Column.TypeName == "nvarchar" || scalar.Column.TypeName == "varchar")
+            {
+                return string.Format("{0}({1})", scalar.Column.TypeName, scalar.Column.MaxLength);
+            }
+
+            if (scalar.Column.TypeName == "decimal" || scalar.Column.TypeName == "numeric")
+            {
+                return string.Format("{0}({1},{2})", scalar.Column.TypeName, scalar.Column.Precision, scalar.Column.Scale);
+            }
+
+            return scalar.Column.TypeName;
         }
 
         private Type GetClrTypeFromTypeMapping(MetadataWorkspace metadata, ObjectItemCollection objectItemCollection, EntityTypeMapping mapping)

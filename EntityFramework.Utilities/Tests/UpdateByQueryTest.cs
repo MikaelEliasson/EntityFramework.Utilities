@@ -77,6 +77,7 @@ namespace Tests
             return 20;
         }
         [TestMethod]
+        [Ignore]
         public async Task UpdateAll_SetFromMethod()
         {
             SetupBasePosts();
@@ -96,6 +97,7 @@ namespace Tests
         }
 
         [TestMethod]
+        [Ignore]
         public async Task UpdateAll_SetFromProperty()
         {
             SetupBasePosts();
@@ -109,6 +111,7 @@ namespace Tests
         }
 
         [TestMethod]
+        [Ignore]
         public async Task UpdateAll_ConcatStringValue()
         {
             SetupBasePosts();

@@ -56,7 +56,7 @@ namespace EntityFramework.Utilities
                 {
                     NameInDatabase = p.ColumnName,
                     NameOnObject = p.PropertyName,
-                    DataType = p.DataType,
+                    DataType = p.DataTypeFull,
                     IsPrimaryKey = p.IsPrimaryKey,
                     IsStoreGenerated = p.IsStoreGenerated,
                 }).ToList();

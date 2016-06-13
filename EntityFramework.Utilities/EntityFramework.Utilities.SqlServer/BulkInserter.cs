@@ -95,7 +95,7 @@ namespace EntityFramework.Utilities.SqlServer
             var schema = tableSpec.TableMapping.Schema;
             var tempTableName = TempTableNameGenerator(tableName);
             var columnsToUpdate = updateSpecification.Properties.Select(p => p.GetPropertyName()).ToDictionary(x => x);
-            var filtered = tableSpec.Properties.Where(p => columnsToUpdate.ContainsKey(p.NameOnObject) || p.IsPrimaryKey).ToList();
+            var filtered = tableSpec.Properties.Where(p => (p.NameOnObject != null && columnsToUpdate.ContainsKey(p.NameOnObject)) || p.IsPrimaryKey).ToList();
 
             var str = settings.TempSettings.SqlGenerator.BuildCreateTableCommand(schema, tempTableName, filtered);
 

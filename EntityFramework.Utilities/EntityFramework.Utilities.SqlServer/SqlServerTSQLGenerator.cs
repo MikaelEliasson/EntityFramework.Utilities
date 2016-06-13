@@ -16,7 +16,7 @@ namespace EntityFramework.Utilities
         {
             var setters = string.Join(",", properties.Where(c => !c.IsPrimaryKey).Select(c => "[" + c.NameInDatabase + "] = TEMP.[" + c.NameInDatabase + "]"));
             var pks = properties.Where(p => p.IsPrimaryKey).Select(x => "ORIG.[" + x.NameInDatabase + "] = TEMP.[" + x.NameInDatabase + "]");
-            var filter = string.Join(",", pks);
+            var filter = string.Join(" and ", pks);
             var mergeCommand = string.Format(@"UPDATE [{0}]
                 SET
                     {3}
@@ -26,6 +26,7 @@ namespace EntityFramework.Utilities
                      [{1}] TEMP
                 ON 
                     {2}", tableName, tempTableName, filter, setters);
+
             return mergeCommand;
         }
 
