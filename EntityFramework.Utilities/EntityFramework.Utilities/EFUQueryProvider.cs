@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 
 namespace EntityFramework.Utilities
 {
-    public class EFUQueryProvider<T> : ExpressionVisitor, System.Linq.IQueryProvider
+    public class EFUQueryProvider<T> : ExpressionVisitor, IQueryProvider
     {
         internal IQueryable source;
 

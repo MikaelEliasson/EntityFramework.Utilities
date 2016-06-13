@@ -1,5 +1,4 @@
-﻿using System.Data.Entity;
-using System.Data.SqlClient;
+﻿using System.Data.SqlClient;
 
 namespace EntityFramework.Utilities
 {
