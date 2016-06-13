@@ -20,9 +20,9 @@ namespace EntityFramework.Utilities
         }
     }
 
-    static class ExpressionHelper
+    public static class ExpressionHelper
     {
-        internal static Expression<Func<T, bool>> CombineExpressions<T, TP>(Expression<Func<T, TP>> prop, Expression<Func<T, TP>> modifier) where T : class
+        public static Expression<Func<T, bool>> CombineExpressions<T, TP>(Expression<Func<T, TP>> prop, Expression<Func<T, TP>> modifier) where T : class
         {
             var propRewritten = new ReplaceVisitor(prop.Parameters[0], modifier.Parameters[0]).Visit(prop.Body);
             var expr = Expression.Equal(propRewritten, modifier.Body);
@@ -44,7 +44,7 @@ namespace EntityFramework.Utilities
         }
 
         //http://stackoverflow.com/a/2824409/507279
-        internal static Action<T, TP> PropertyExpressionToSetter<T, TP>(Expression<Func<T, TP>> prop)
+        public static Action<T, TP> PropertyExpressionToSetter<T, TP>(Expression<Func<T, TP>> prop)
         {
 
             // re-write in .NET 4.0 as a "set"
@@ -57,7 +57,7 @@ namespace EntityFramework.Utilities
             return set.Compile();
         }
 
-        internal static Action<T, object> PropertyNameToSetter<T>(string propertyName)
+        public static Action<T, object> PropertyNameToSetter<T>(string propertyName)
         {
             var method = typeof(T).GetProperty(propertyName).GetSetMethod();
 

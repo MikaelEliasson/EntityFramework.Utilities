@@ -1,5 +1,4 @@
-﻿
-using System.Diagnostics;
+﻿using System.Diagnostics;
 namespace EntityFramework.Utilities
 {
     [DebuggerDisplay("NameOnObject = {NameOnObject} NameInDatabase = {NameInDatabase}")]
@@ -14,5 +13,18 @@ namespace EntityFramework.Utilities
         public bool IsPrimaryKey { get; set; }
 
         public bool IsStoreGenerated { get; set; }
+
+        public ColumnMapping Copy()
+        {
+            return new ColumnMapping
+            {
+                NameOnObject = NameOnObject,
+                StaticValue = StaticValue,
+                NameInDatabase = NameInDatabase,
+                DataType = DataType,
+                IsPrimaryKey = IsPrimaryKey,
+                IsStoreGenerated = IsStoreGenerated
+            };
+        }
     }
 }

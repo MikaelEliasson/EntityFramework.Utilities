@@ -7,6 +7,7 @@ using Tests.FakeDomain;
 using EntityFramework.Utilities;
 using Tests;
 using System.Data.Entity;
+using EntityFramework.Utilities.SqlServer;
 
 namespace PerformanceTests
 {
@@ -124,25 +125,25 @@ namespace PerformanceTests
                 var stop = new Stopwatch();
                 var comments = GetEntities(count).ToList();                
                 stop.Start();
-                EFBatchOperation.For(db, db.Comments).InsertAll(comments);
+                EFBatchOperation.For(db, db.Comments).InsertAllAsync(comments).Wait();
                 stop.Stop();
                 Console.WriteLine(comments.First().Id);
                 Console.WriteLine(comments.Last().Id);
                 Console.WriteLine("Insert entities: " + stop.ElapsedMilliseconds + "ms");
 
                 stop.Start();
-                EFBatchOperation.For(db, db.Comments).InsertAll(comments, new BulkSettings
+                EFBatchOperation.For(db, db.Comments).InsertAllAsync(comments, new SqlServerBulkSettings
                 {
                     ReturnIdsOnInsert = true
-                });
+                }).Wait();
                 stop.Stop();
                 Console.WriteLine(comments.First().Id);
                 Console.WriteLine(comments.Last().Id);
                 Console.WriteLine("Insert entities (id return): " + stop.ElapsedMilliseconds + "ms");
-               
+
 
                 stop.Restart();
-                EFBatchOperation.For(db, db.Comments).Where(x => x.Text == "a").Update(x => x.Reads, x => x.Reads + 1);
+                var c1 = EFBatchOperation.For(db, db.Comments).Where(x => x.Text == "a").UpdateAsync(x => x.Reads, x => x.Reads + 1).Result;
                 stop.Stop();
                 Console.WriteLine("Update all entities with a: " + stop.ElapsedMilliseconds + "ms");
 
@@ -153,17 +154,17 @@ namespace PerformanceTests
                     item.Reads = rand.Next(0, 9999999);
                 }
                 stop.Restart();
-                EFBatchOperation.For(db, db.Comments).UpdateAll(commentsFromDb, x => x.ColumnsToUpdate(c => c.Reads));
+                EFBatchOperation.For(db, db.Comments).UpdateAllAsync(commentsFromDb, x => x.ColumnsToUpdate(c => c.Reads)).Wait();
                 stop.Stop();
                 Console.WriteLine("Bulk update all with a random read: " + stop.ElapsedMilliseconds + "ms");
 
                 stop.Restart();
-                EFBatchOperation.For(db, db.Comments).Where(x => x.Text == "a").Delete();
+                var c2 = EFBatchOperation.For(db, db.Comments).Where(x => x.Text == "a").DeleteAsync().Result;
                 stop.Stop();
                 Console.WriteLine("delete all entities with a: " + stop.ElapsedMilliseconds + "ms");
 
                 stop.Restart();
-                EFBatchOperation.For(db, db.Comments).Where(x => true).Delete();
+                var c3 = EFBatchOperation.For(db, db.Comments).Where(x => true).DeleteAsync().Result;
                 stop.Stop();
                 Console.WriteLine("delete all entities: " + stop.ElapsedMilliseconds + "ms");
 

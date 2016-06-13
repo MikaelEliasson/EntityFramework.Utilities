@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using EntityFramework.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.FakeDomain;
 using Tests.FakeDomain.Models;
 using System.Threading.Tasks;
+using EntityFramework.Utilities.SqlServer;
 
 namespace Tests
 {
@@ -12,9 +12,9 @@ namespace Tests
     public class UpdateBulkTests
     {
         [TestMethod]
-        public void UpdateBulk_UpdatesAll()
+        public async Task UpdateBulk_UpdatesAll()
         {
-            Setup();
+            await Setup();
 
             using (var db = Context.Sql())
             {
@@ -23,30 +23,6 @@ namespace Tests
 	            {
                     post.Title = post.Title.Replace("1", "4").Replace("2", "8").Replace("3", "12");
 	            }
-                EFBatchOperation.For(db, db.BlogPosts).UpdateAll(posts, spec => spec.ColumnsToUpdate(p => p.Title));
-            }
-
-            using (var db = Context.Sql())
-            {
-                var posts = db.BlogPosts.OrderBy(b => b.ID).ToList();
-                Assert.AreEqual("T4", posts[0].Title);
-                Assert.AreEqual("T8", posts[1].Title);
-                Assert.AreEqual("T12", posts[2].Title);
-            }
-        }
-
-        [TestMethod]
-        public async Task UpdateBulkAsync_UpdatesAll()
-        {
-            Setup();
-
-            using (var db = Context.Sql())
-            {
-                var posts = db.BlogPosts.ToList();
-                foreach (var post in posts)
-                {
-                    post.Title = post.Title.Replace("1", "4").Replace("2", "8").Replace("3", "12");
-                }
                 await EFBatchOperation.For(db, db.BlogPosts).UpdateAllAsync(posts, spec => spec.ColumnsToUpdate(p => p.Title));
             }
 
@@ -59,7 +35,7 @@ namespace Tests
             }
         }
 
-        private static void Setup()
+        private static async Task Setup()
         {
             using (var db = Context.Sql())
             {
@@ -75,7 +51,7 @@ namespace Tests
                     BlogPost.Create("T3")
                 };
 
-                EFBatchOperation.For(db, db.BlogPosts).InsertAll(list);
+                await EFBatchOperation.For(db, db.BlogPosts).InsertAllAsync(list);
             }
         }
     }

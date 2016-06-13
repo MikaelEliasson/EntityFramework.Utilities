@@ -6,6 +6,8 @@ using Tests.FakeDomain;
 using Tests.FakeDomain.Models;
 using System;
 using System.Threading.Tasks;
+using EntityFramework.Utilities.SqlServer;
+using System.Data.SqlClient;
 
 namespace Tests
 {
@@ -13,7 +15,7 @@ namespace Tests
     public class InsertTests
     {
         [TestMethod]
-        public void InsertAll_InsertItems_WithTypeHierarchy()
+        public async Task InsertAll_InsertItems_WithTypeHierarchy()
         {
             using (var db = Context.Sql())
             {
@@ -28,7 +30,7 @@ namespace Tests
                 people.Add(Contact.Build("FN2", "LN2", "Associate"));
                 people.Add(Contact.Build("FN3", "LN3", "Vice President"));
 
-                EFBatchOperation.For(db, db.People).InsertAll(people);
+                await EFBatchOperation.For(db, db.People).InsertAllAsync(people);
             }
 
             using (var db = Context.Sql())
@@ -41,7 +43,7 @@ namespace Tests
         }
 
         [TestMethod]
-        public void InsertAll_InsertItems_WithTypeHierarchyBase()
+        public async Task InsertAll_InsertItems_WithTypeHierarchyBase()
         {
             using (var db = Context.Sql())
             {
@@ -56,7 +58,7 @@ namespace Tests
                 people.Add(Person.Build("FN2", "LN2"));
                 people.Add(Person.Build("FN3", "LN3"));
 
-                EFBatchOperation.For(db, db.People).InsertAll(people);
+                await EFBatchOperation.For(db, db.People).InsertAllAsync(people);
             }
 
             using (var db = Context.Sql())
@@ -68,37 +70,13 @@ namespace Tests
         }
 
         [TestMethod]
-        public void InsertAll_InsertsItems()
+        public async Task InsertAll_InsertsItems()
         {
             using (var db = Context.Sql())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.Delete();
-                }
-                db.Database.Create();
 
-                var list = new List<BlogPost>(){
-                    BlogPost.Create("T1"),
-                    BlogPost.Create("T2"),
-                    BlogPost.Create("T3")
-                };
+                EfMappingFactory.GetMappingsForContext(db);
 
-                EFBatchOperation.For(db, db.BlogPosts).InsertAll(list);
-            }
-
-            using (var db = Context.Sql())
-            {
-                Assert.AreEqual(3, db.BlogPosts.Count());
-                Assert.AreEqual("m@m.com", db.BlogPosts.First().Author.Email);
-            }
-        }
-
-        [TestMethod]
-        public async Task InsertAllAsync_InsertsItems()
-        {
-            using (var db = Context.Sql())
-            {
                 if (db.Database.Exists())
                 {
                     db.Database.Delete();
@@ -121,8 +99,9 @@ namespace Tests
             }
         }
 
+
         [TestMethod]
-        public void InsertAll_WithIdReturn_InsertsItemsAndSetIds()
+        public async Task InsertAll_WithIdReturn_InsertsItemsAndSetIds()
         {
             var list = new List<BlogPost>(){
                     BlogPost.Create("T1"),
@@ -137,7 +116,7 @@ namespace Tests
                 }
                 db.Database.Create();
 
-                EFBatchOperation.For(db, db.BlogPosts).InsertAll(list, new BulkSettings
+                await EFBatchOperation.For(db, db.BlogPosts).InsertAllAsync(list, new SqlServerBulkSettings
                 {
                     ReturnIdsOnInsert = true,
                 });
@@ -156,41 +135,7 @@ namespace Tests
         }
 
         [TestMethod]
-        public async Task InsertAllAsync_WithIdReturn_InsertsItemsAndSetIds()
-        {
-            var list = new List<BlogPost>(){
-                    BlogPost.Create("T1"),
-                    BlogPost.Create("T2"),
-                    BlogPost.Create("T3")
-                };
-            using (var db = Context.Sql())
-            {
-                if (db.Database.Exists())
-                {
-                    db.Database.ForceDelete();
-                }
-                db.Database.Create();
-
-                await EFBatchOperation.For(db, db.BlogPosts).InsertAllAsync(list, new BulkSettings
-                {
-                    ReturnIdsOnInsert = true,
-                });
-            }
-
-            using (var db = Context.Sql())
-            {
-                var ids = list.Select(x => x.ID).Distinct();
-                Assert.AreEqual(3, ids.Count());
-
-                var first = list.First();
-                var firstInDb = db.BlogPosts.Find(first.ID);
-
-                Assert.AreEqual(first.Title, firstInDb.Title);
-            }
-        }
-
-        [TestMethod]
-        public void InsertAll_WithExplicitConnection_InsertsItems()
+        public async Task InsertAll_WithExplicitConnection_InsertsItems()
         {
             using (var db = Context.Sql())
             {
@@ -205,7 +150,7 @@ namespace Tests
                     BlogPost.Create("T2"),
                     BlogPost.Create("T3")
                 };
-                EFBatchOperation.For(db, db.BlogPosts).InsertAll(list, db.Database.Connection);
+                await EFBatchOperation.For(db, db.BlogPosts).InsertAllAsync(list, new SqlServerBulkSettings { Connection = db.Database.Connection as SqlConnection });
             }
 
             using (var db = Context.Sql())
@@ -215,7 +160,7 @@ namespace Tests
         }
 
         [TestMethod]
-        public void InsertAll_WrongColumnOrder_InsertsItems()
+        public async Task InsertAll_WrongColumnOrder_InsertsItems()
         {
             using (var db = new ReorderedContext())
             {
@@ -235,7 +180,7 @@ namespace Tests
                     BlogPost.Create("T3")
                 };
 
-                EFBatchOperation.For(db, db.BlogPosts).InsertAll(list);
+                await EFBatchOperation.For(db, db.BlogPosts).InsertAllAsync(list);
             }
 
             using (var db = Context.Sql())
@@ -245,7 +190,7 @@ namespace Tests
         }
 
         [TestMethod]
-        public void InsertAll_WrongColumnOrderAndRenamedColumn_InsertsItems()
+        public async Task InsertAll_WrongColumnOrderAndRenamedColumn_InsertsItems()
         {
             using (var db = new RenamedAndReorderedContext())
             {
@@ -267,7 +212,7 @@ namespace Tests
                     RenamedAndReorderedBlogPost.Create("T3")
                 };
 
-                EFBatchOperation.For(db, db.BlogPosts).InsertAll(list);
+                await EFBatchOperation.For(db, db.BlogPosts).InsertAllAsync(list);
             }
 
             using (var db = new RenamedAndReorderedContext())
@@ -276,44 +221,9 @@ namespace Tests
             }
         }
 
-        [TestMethod]
-        public void InsertAll_NoProvider_UsesDefaultInsert()
-        {
-            string fallbackText = null;
-            Configuration.DisableDefaultFallback = false;
-            Configuration.Log = str => fallbackText = str;
-
-            using (var db = Context.SqlCe())
-            {
-                if (db.Database.Exists())
-                {
-                    db.Database.Delete();
-                }
-                db.Database.Create();
-            }
-
-            var list = new List<BlogPost>(){
-                    BlogPost.Create("T1"),
-                    BlogPost.Create("T2"),
-                    BlogPost.Create("T3")
-                };
-
-            using (var db = Context.SqlCe())
-            {
-                EFBatchOperation.For(db, db.BlogPosts).InsertAll(list);
-            }
-
-            using (var db = Context.SqlCe())
-            {
-                Assert.AreEqual(3, db.BlogPosts.Count());
-            }
-
-            Assert.IsNotNull(fallbackText);
-        }
-
 
         [TestMethod]
-        public void InsertAll_WithForeignKey()
+        public async Task InsertAll_WithForeignKey()
         {
             int postId = -1;
             using (var db = Context.Sql())
@@ -334,7 +244,7 @@ namespace Tests
                     new Comment{Text = "C2", PostId = bp.ID },
                 };
 
-                EFBatchOperation.For(db, db.Comments).InsertAll(comments);
+                await EFBatchOperation.For(db, db.Comments).InsertAllAsync(comments);
             }
 
             using (var db = Context.Sql())

@@ -35,6 +35,15 @@ namespace EntityFramework.Utilities
         /// The table(s) that the entity is mapped to
         /// </summary>
         public List<TableMapping> TableMappings { get; set; }
+
+        public TypeMapping Copy()
+        {
+            return new TypeMapping
+            {
+                EntityType = EntityType,
+                TableMappings = TableMappings.Select(t => t.Copy()).ToList()
+            };
+        }
     }
 
     /// <summary>
@@ -60,6 +69,17 @@ namespace EntityFramework.Utilities
         /// Null if not TPH
         /// </summary>
         public TPHConfiguration TPHConfiguration { get; set; }
+
+        public TableMapping Copy()
+        {
+            return new TableMapping
+            {
+                TableName = TableName,
+                Schema = Schema,
+                PropertyMappings = PropertyMappings.Select(p => p.Clone()).ToList(),
+                TPHConfiguration = TPHConfiguration?.Clone()
+            };
+        }
     }
 
     public class TPHConfiguration
@@ -67,6 +87,14 @@ namespace EntityFramework.Utilities
         public Dictionary<Type, string> Mappings { get; set; }
         public string ColumnName { get; set; }
 
+        public TPHConfiguration Clone()
+        {
+            return new TPHConfiguration
+            {
+                Mappings = new Dictionary<Type, string>(Mappings),
+                ColumnName = ColumnName
+            };
+        }
     }
 
     /// <summary>
@@ -94,6 +122,19 @@ namespace EntityFramework.Utilities
         public bool IsPrimaryKey { get; set; }
 
         public bool IsStoreGenerated { get; set; }
+
+        public PropertyMapping Clone()
+        {
+            return new PropertyMapping
+            {
+                PropertyName = PropertyName,
+                ColumnName = ColumnName,
+                DataType = DataType,
+                ForEntityType = ForEntityType,
+                IsPrimaryKey = IsPrimaryKey,
+                IsStoreGenerated = IsStoreGenerated
+            };
+        }
     }
 
     /// <summary>
@@ -197,7 +238,7 @@ namespace EntityFramework.Utilities
                     {
                         tableMapping.TPHConfiguration.Mappings.Add(
                             getClr(item.Fragments[0]),
-                            GetNonPublicPropertyValue(item.Fragments[0].Conditions[0], "Value").ToString()
+                            ((ValueConditionMapping)item.Fragments[0].Conditions[0]).Value.ToString()
                             );
                     }
                 }
@@ -227,14 +268,6 @@ namespace EntityFramework.Utilities
         private Type GetClrTypeFromTypeMapping(MetadataWorkspace metadata, ObjectItemCollection objectItemCollection, EntityTypeMapping mapping)
         {
             return GetClrType(metadata, objectItemCollection, mapping.EntityType ?? mapping.IsOfEntityTypes.First());
-        }
-
-
-        static object GetNonPublicPropertyValue(object o, string propertyName)
-        {
-            return o.GetType()
-              .GetProperty(propertyName, BindingFlags.NonPublic | BindingFlags.Instance)
-              .GetValue(o, null);
         }
 
         private static dynamic GetProperty(string property, object instance)
