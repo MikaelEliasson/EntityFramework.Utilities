@@ -175,11 +175,7 @@ namespace PerformanceTests
         {
             using (var db = new Context())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.Delete();
-                }
-                db.Database.Create();
+                db.SetupDb();
 
                 //warmup
                 db.Comments.Add(new Comment { Date = DateTime.Now, Address = new Address() });

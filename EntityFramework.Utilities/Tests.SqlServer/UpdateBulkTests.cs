@@ -42,11 +42,7 @@ namespace Tests
         {
             using (var db = Context.Sql())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.Delete();
-                }
-                db.Database.Create();
+                db.SetupDb();
 
                 List<Contact> people = new List<Contact>();
                 people.Add(Contact.Build("FN1", "LN1", "Director"));
@@ -81,11 +77,7 @@ namespace Tests
         {
             using (var db = Context.Sql())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.ForceDelete();
-                }
-                db.Database.Create();
+                db.SetupDb();
 
                 var list = new List<NumericTestObject>(){
                     new NumericTestObject{ }
@@ -120,11 +112,7 @@ namespace Tests
         {
             using (var db = Context.Sql())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.ForceDelete();
-                }
-                db.Database.Create();
+                db.SetupDb();
 
                 var guid = Guid.NewGuid();
                 var list = new List<MultiPKObject>(){
@@ -182,11 +170,7 @@ namespace Tests
         {
             using (var db = Context.Sql())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.ForceDelete();
-                }
-                db.Database.Create();
+                db.SetupDb();
 
                 var list = new List<BlogPost>(){
                     BlogPost.Create("T1"),

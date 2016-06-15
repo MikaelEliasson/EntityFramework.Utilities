@@ -5,8 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
 using Tests.FakeDomain;
 using Tests.FakeDomain.Models;
 
@@ -481,11 +479,7 @@ namespace Tests
         {
             using (var db = Context.Sql())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.ForceDelete();
-                }
-                db.Database.Create();
+                db.SetupDb();
                 CreateSmallTestSet(db);
             }
         }

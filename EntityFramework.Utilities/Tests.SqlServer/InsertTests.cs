@@ -19,11 +19,7 @@ namespace Tests
         {
             using (var db = Context.Sql())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.Delete();
-                }
-                db.Database.Create();
+                db.SetupDb();
 
                 List<Contact> people = new List<Contact>();
                 people.Add(Contact.Build("FN1", "LN1", "Director"));
@@ -47,11 +43,7 @@ namespace Tests
         {
             using (var db = Context.Sql())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.Delete();
-                }
-                db.Database.Create();
+                db.SetupDb();
 
                 List<Person> people = new List<Person>();
                 people.Add(Person.Build("FN1", "LN1"));
@@ -74,14 +66,7 @@ namespace Tests
         {
             using (var db = Context.Sql())
             {
-
-                EfMappingFactory.GetMappingsForContext(db);
-
-                if (db.Database.Exists())
-                {
-                    db.Database.Delete();
-                }
-                db.Database.Create();
+                db.SetupDb();
 
                 var list = new List<BlogPost>(){
                     BlogPost.Create("T1"),
@@ -110,11 +95,7 @@ namespace Tests
                 };
             using (var db = Context.Sql())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.ForceDelete();
-                }
-                db.Database.Create();
+                db.SetupDb();
 
                 await EFBatchOperation.For(db, db.BlogPosts).InsertAllAsync(list, new SqlServerBulkSettings
                 {
@@ -139,11 +120,7 @@ namespace Tests
         {
             using (var db = Context.Sql())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.Delete();
-                }
-                db.Database.Create();
+                db.SetupDb();
 
                 var list = new List<BlogPost>(){
                     BlogPost.Create("T1"),
@@ -164,11 +141,7 @@ namespace Tests
         {
             using (var db = new ReorderedContext())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.Delete();
-                }
-                db.Database.Create();
+                db.SetupDb();
             }
 
             using (var db = Context.Sql())
@@ -194,11 +167,7 @@ namespace Tests
         {
             using (var db = new RenamedAndReorderedContext())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.Delete();
-                }
-                db.Database.Create();
+                db.SetupDb();
                 db.Database.ExecuteSqlCommand("drop table dbo.RenamedAndReorderedBlogPosts;");
                 db.Database.ExecuteSqlCommand(RenamedAndReorderedBlogPost.CreateTableSql());
             }
@@ -228,11 +197,7 @@ namespace Tests
             int postId = -1;
             using (var db = Context.Sql())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.Delete();
-                }
-                db.Database.Create();
+                db.SetupDb();
 
                 var bp = BlogPost.Create("B1");
                 db.BlogPosts.Add(bp);

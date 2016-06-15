@@ -5,10 +5,10 @@
         public SqlServerUpdateSettings()
         {
             Analyzer = new SqlQueryAnalyzer();
-            SqlGenerator = new SqlServerTSQLGenerator();
+            SqlGenerator = new TSQLGenerator();
         }
 
         public SqlQueryAnalyzer Analyzer { get; private set; }
-        public SqlServerTSQLGenerator SqlGenerator { get; private set; }
+        public TSQLGenerator SqlGenerator { get; private set; }
     }
 }

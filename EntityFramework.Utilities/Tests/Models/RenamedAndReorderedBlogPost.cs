@@ -26,7 +26,7 @@ namespace Tests.FakeDomain.Models
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]";
         }
 
-        internal static RenamedAndReorderedBlogPost Create(string title)
+        public static RenamedAndReorderedBlogPost Create(string title)
         {
 
             return new RenamedAndReorderedBlogPost

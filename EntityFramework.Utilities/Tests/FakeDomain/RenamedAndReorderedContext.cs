@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.Entity;
+﻿using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
-using System.Linq;
-using System.Text;
 using Tests.FakeDomain.Models;
 
 namespace Tests.FakeDomain
@@ -34,11 +30,7 @@ namespace Tests.FakeDomain
         {
             using (var db = new RenamedAndReorderedContext())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.Delete();
-                }
-                db.Database.Create();
+                db.SetupDb();
                 db.Database.ExecuteSqlCommand("drop table dbo.RenamedAndReorderedBlogPosts;");
                 db.Database.ExecuteSqlCommand(RenamedAndReorderedBlogPost.CreateTableSql());
             }

@@ -83,7 +83,7 @@ namespace EntityFramework.Utilities.SqlServer
 
             var tableSpec = BulkTableSpec.Get<TEntity, T>(this.dbContext);
 
-            await settings.Inserter.InsertItemsAsync(items, tableSpec, settings);
+            await settings.Factory.Inserter().InsertItemsAsync(items, tableSpec, settings);
         }
 
 
@@ -99,7 +99,7 @@ namespace EntityFramework.Utilities.SqlServer
 
             var spec = new UpdateSpecification<TEntity>();
             updateSpecification(spec);
-            await settings.Inserter.UpdateItemsAsync(items, tableSpec, settings, spec);
+            await settings.Factory.Inserter().UpdateItemsAsync(items, tableSpec, settings, spec);
 
         }
 

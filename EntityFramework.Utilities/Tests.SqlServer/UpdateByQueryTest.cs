@@ -1,10 +1,7 @@
 ﻿using System.Linq;
-using EntityFramework.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Tests.FakeDomain;
 using System;
-using System.Data.Entity.Core.Objects;
-using System.Data.Entity;
 using Tests.FakeDomain.Models;
 using System.Threading.Tasks;
 using EntityFramework.Utilities.SqlServer;
@@ -210,11 +207,7 @@ namespace Tests
         {
             using (var db = Context.Sql())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.Delete();
-                }
-                db.Database.Create();
+                db.SetupDb();
 
                 var p = BlogPost.Create("T1");
                 p.Reads = 2;

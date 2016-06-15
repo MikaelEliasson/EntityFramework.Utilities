@@ -10,7 +10,7 @@ namespace EntityFramework.Utilities.SqlServer
     {
         public Func<string, string> TempTableNameGenerator = tableName => "temp_" + tableName + "_" + DateTime.Now.Ticks;
 
-        public async Task InsertItemsAsync<T>(IEnumerable<T> items, BulkTableSpec tableSpec, SqlServerBulkSettings settings)
+        public virtual async Task InsertItemsAsync<T>(IEnumerable<T> items, BulkTableSpec tableSpec, SqlServerBulkSettings settings)
         {
             var tableName = tableSpec.TableMapping.TableName;
             var schema = tableSpec.TableMapping.Schema;
@@ -18,17 +18,16 @@ namespace EntityFramework.Utilities.SqlServer
             if (settings.ReturnIdsOnInsert && tableSpec.Properties.Any(p => p.IsPrimaryKey && p.IsStoreGenerated))
             {
                 var tempTableName = TempTableNameGenerator(tableName);
-                var str = settings.TempSettings.SqlGenerator.BuildCreateTableCommand(schema, tempTableName, tableSpec.Properties.Where(p => !p.IsStoreGenerated));
+                var tempSpec = tableSpec.Copy();
+                tempSpec.TableMapping.TableName = tempTableName;
+
                 var mergeCommand = settings.TempSettings.SqlGenerator.BuildSelectIntoCommand(tableName, tableSpec.Properties, tempTableName);
 
                 var setters = tableSpec.Properties.Where(p => p.IsStoreGenerated).Select((p, i) => new { i, setter = ExpressionHelper.PropertyNameToSetter<T>(p.NameOnObject) }).ToList();
                 var tempSettings = settings.TempSettings;
                 tempSettings.PreInsert = async (connection, tran) =>
                 {
-                    using (var createCommand = new SqlCommand(str, connection, tran))
-                    {
-                        await createCommand.ExecuteNonQueryAsync();
-                    }
+                    await settings.TempSettings.Factory.TableCreator().CreateTable(connection, tran, tempSpec);
                 };
 
                 tempSettings.PostInsert = async (connection, tran) =>
@@ -63,7 +62,7 @@ namespace EntityFramework.Utilities.SqlServer
             }
         }
 
-        private async Task InsertItemsAsyncInternal<T>(IEnumerable<T> items, BulkTableSpec tableSpec, SqlServerBulkSettings settings)
+        protected virtual async Task InsertItemsAsyncInternal<T>(IEnumerable<T> items, BulkTableSpec tableSpec, SqlServerBulkSettings settings)
         {
             using (var reader = new EFDataReader<T>(items, tableSpec.Properties))
             {
@@ -89,16 +88,17 @@ namespace EntityFramework.Utilities.SqlServer
             }
         }
 
-        public async Task UpdateItemsAsync<T>(IEnumerable<T> items, BulkTableSpec tableSpec, SqlServerBulkSettings settings, UpdateSpecification<T> updateSpecification)
+        public virtual async Task UpdateItemsAsync<T>(IEnumerable<T> items, BulkTableSpec tableSpec, SqlServerBulkSettings settings, UpdateSpecification<T> updateSpecification)
         {
             var tableName = tableSpec.TableMapping.TableName;
             var schema = tableSpec.TableMapping.Schema;
             var tempTableName = TempTableNameGenerator(tableName);
+            var tempSpec = tableSpec.Copy();
+            tempSpec.TableMapping.TableName = tempTableName;
+
             var columnsToUpdate = updateSpecification.Properties.Select(p => p.GetPropertyName()).ToDictionary(x => x);
             var filtered = tableSpec.Properties.Where(p => (p.NameOnObject != null && columnsToUpdate.ContainsKey(p.NameOnObject)) || p.IsPrimaryKey).ToList();
-
-            var str = settings.TempSettings.SqlGenerator.BuildCreateTableCommand(schema, tempTableName, filtered);
-
+            tempSpec.Properties = filtered;
 
             var con = settings.Connection as SqlConnection;
             if (con.State != System.Data.ConnectionState.Open)
@@ -111,11 +111,13 @@ namespace EntityFramework.Utilities.SqlServer
             copy.Properties = filtered;
             copy.TableMapping.TableName = tempTableName;
 
-            using (var createCommand = new SqlCommand(str, con, settings.Transaction))
+
+            await settings.TempSettings.Factory.TableCreator().CreateTable(con, settings.Transaction, tempSpec);
+
+
             using (var mCommand = new SqlCommand(mergeCommand, con, settings.Transaction))
             using (var dCommand = new SqlCommand(settings.TempSettings.SqlGenerator.BuildDropStatement(schema, tempTableName), con, settings.Transaction))
             {
-                await createCommand.ExecuteNonQueryAsync();
                 await InsertItemsAsync(items, copy, settings);
                 await mCommand.ExecuteNonQueryAsync();
                 await dCommand.ExecuteNonQueryAsync();

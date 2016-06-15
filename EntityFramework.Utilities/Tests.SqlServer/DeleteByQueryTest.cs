@@ -16,11 +16,7 @@ namespace Tests
         {
             using (var db = Context.Sql())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.Delete();
-                }
-                db.Database.Create();
+                db.SetupDb();
 
                 db.BlogPosts.Add(BlogPost.Create("T1"));
                 db.BlogPosts.Add(BlogPost.Create("T2"));
@@ -50,11 +46,7 @@ namespace Tests
         {
             using (var db = Context.Sql())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.Delete();
-                }
-                db.Database.Create();
+                db.SetupDb();
 
                 db.BlogPosts.Add(BlogPost.Create("T1", DateTime.Today.AddDays(-2)));
                 db.BlogPosts.Add(BlogPost.Create("T2", DateTime.Today.AddDays(-1)));
@@ -85,11 +77,7 @@ namespace Tests
         {
             using (var db = Context.Sql())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.Delete();
-                }
-                db.Database.Create();
+                db.SetupDb();
 
                 db.BlogPosts.Add(BlogPost.Create("T1", DateTime.Today.AddDays(-2)));
                 db.BlogPosts.Add(BlogPost.Create("T2", DateTime.Today.AddDays(0)));
@@ -120,11 +108,7 @@ namespace Tests
         {
             using (var db = Context.Sql())
             {
-                if (db.Database.Exists())
-                {
-                    db.Database.Delete();
-                }
-                db.Database.Create();
+                db.SetupDb();
 
                 db.BlogPosts.Add(BlogPost.Create("T1", DateTime.Today.AddDays(-2)));
                 db.BlogPosts.Add(BlogPost.Create("T2.0", DateTime.Today.AddDays(0)));

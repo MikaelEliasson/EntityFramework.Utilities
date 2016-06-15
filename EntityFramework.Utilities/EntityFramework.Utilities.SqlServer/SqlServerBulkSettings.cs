@@ -8,7 +8,7 @@ namespace EntityFramework.Utilities.SqlServer
     {
         public SqlServerBulkSettings()
         {
-            Inserter = new BulkInserter();
+            Factory = new HelperFactory();
         }
 
         public int? BatchSize { get; set; }
@@ -25,12 +25,21 @@ namespace EntityFramework.Utilities.SqlServer
         /// </summary>
         public bool ReturnIdsOnInsert { get; set; }
 
-        public BulkInserter Inserter {  get; set; }
+        public HelperFactory Factory { get; set; }
 
         public TempTableSqlServerBulkSettings TempSettings { get; set; }
 
         public Func<SqlConnection, SqlTransaction, Task> PreInsert { get; set; }
         public Func<SqlConnection, SqlTransaction, Task> PostInsert { get; set; }
+
+    }
+
+    public class HelperFactory
+    {
+        public Func<BulkInserter> Inserter { get; set; } = () => new BulkInserter();
+        public Func<TSQLGenerator> SqlGenerator { get; set; } = () => new TSQLGenerator();
+        public Func<TableCreator> TableCreator { get; set; } = () => new TableCreator();
+
 
     }
 
@@ -44,11 +53,11 @@ namespace EntityFramework.Utilities.SqlServer
             Connection = settings.Connection;
             Transaction = settings.Transaction;
             ReturnIdsOnInsert = settings.ReturnIdsOnInsert;
-            Inserter = settings.Inserter;
-            SqlGenerator = new SqlServerTSQLGenerator();
+            Factory = settings.Factory;
+            SqlGenerator = new TSQLGenerator();
         }
 
-        public SqlServerTSQLGenerator SqlGenerator { get; set; }
+        public TSQLGenerator SqlGenerator { get; set; }
 
         public string TableName { get; set; }
 

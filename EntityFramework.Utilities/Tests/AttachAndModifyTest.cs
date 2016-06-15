@@ -71,11 +71,7 @@ namespace Tests
       {
           using (var db = Context.Sql())
           {
-              if (db.Database.Exists())
-              {
-                  db.Database.Delete();
-              }
-              db.Database.Create();
+              db.SetupDb();
 
               var p = BlogPost.Create("T1");
               p.Reads = 2;
