@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data.Common;
-using System.Linq;
-using System.Text;
 
 namespace EntityFramework.Utilities
 {
@@ -17,6 +14,7 @@ namespace EntityFramework.Utilities
         string GetUpdateQuery(QueryInformation predicateQueryInfo, QueryInformation modificationQueryInfo);
         void InsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize);
         void UpdateItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, UpdateSpecification<T> updateSpecification);
+        void UpsertImtes<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, HashSet<string> identitySpecification, HashSet<string> updateSpecification);
 
         bool CanHandle(DbConnection storeConnection);
 

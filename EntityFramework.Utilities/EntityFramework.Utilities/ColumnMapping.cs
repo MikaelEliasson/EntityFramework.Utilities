@@ -12,5 +12,6 @@ namespace EntityFramework.Utilities
         public string DataType { get; set; }
 
         public bool IsPrimaryKey { get; set; }
+        public bool IsStoreGeneratedIdentity { get; set; }
     }
 }

@@ -34,6 +34,26 @@ namespace EntityFramework.Utilities
         /// <param name="connection">The DbConnection to use for the insert. Only needed when for example a profiler wraps the connection. Then you need to provide a connection of the type the provider use.</param>
         /// <param name="batchSize">The size of each batch. Default depends on the provider. SqlProvider uses 15000 as default</param>
         void UpdateAll<TEntity>(IEnumerable<TEntity> items, Action<UpdateSpecification<TEntity>> updateSpecification, DbConnection connection = null, int? batchSize = null) where TEntity : class, T;
+
+        /// <summary>
+        /// provider batch upsert operation
+        /// SQL:
+        /// merge into [(the table of source entity)] as Target 
+        /// using (tempTable) as Source
+        ///     on <paramref name="identitySpecification"/>
+        /// when matched then
+        ///     update set <paramref name="whenMatchedUpdateSpecification"/>
+	    /// when not matched then
+        ///     insert ...;
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <param name="items"></param>
+        /// <param name="identitySpecification">match identity specification. if parameter is null, use primary key as default</param>
+        /// <param name="whenMatchedUpdateSpecification">update specification when matched by <paramref name="identitySpecification"/>. if parameter is null, update all columns except primary key</param>
+        /// <param name="connection"></param>
+        /// <param name="batchSize"></param>
+        void MergeAll<TEntity>(IEnumerable<TEntity> items, Action<IdentitySpecification<TEntity>> identitySpecification = null, 
+            Action<UpdateSpecification<TEntity>> whenMatchedUpdateSpecification = null, DbConnection connection = null, int? batchSize = null) where TEntity : class, T;
     }
 
     public class UpdateSpecification<T>
@@ -44,6 +64,22 @@ namespace EntityFramework.Utilities
         /// <param name="properties"></param>
         /// <returns></returns>
         public UpdateSpecification<T> ColumnsToUpdate(params Expression<Func<T, object>>[] properties)
+        {
+            Properties = properties;
+            return this;
+        }
+
+        public Expression<Func<T, object>>[] Properties { get; set; }
+    }
+
+    public class IdentitySpecification<T>
+    {
+        /// <summary>
+        /// Set each column you use to identity.
+        /// </summary>
+        /// <param name="properties"></param>
+        /// <returns></returns>
+        public IdentitySpecification<T> ColumnsToIdentity(params Expression<Func<T, object>>[] properties)
         {
             Properties = properties;
             return this;
@@ -161,6 +197,7 @@ namespace EntityFramework.Utilities
                         NameInDatabase = p.ColumnName, 
                         NameOnObject = p.PropertyName, 
                         DataType = p.DataTypeFull,
+                        IsStoreGeneratedIdentity = p.IsStoreGeneratedIdentity,
                         IsPrimaryKey = p.IsPrimaryKey
                      }).ToList();
 
@@ -172,6 +209,70 @@ namespace EntityFramework.Utilities
             {
                 Configuration.Log("Found provider: " + (provider == null ? "[]" : provider.GetType().Name) + " for " + connectionToUse.GetType().Name);
                 Fallbacks.DefaultInsertAll(context, items);
+            }
+        }
+
+        public void MergeAll<TEntity>(IEnumerable<TEntity> items, Action<IdentitySpecification<TEntity>> identitySpecification, Action<UpdateSpecification<TEntity>> updateSpecification, DbConnection connection, int? batchSize)
+           where TEntity : class, T
+        {
+            var con = context.Connection as EntityConnection;
+            if (con == null && connection == null)
+            {
+                Configuration.Log("No provider could be found because the Connection didn't implement System.Data.EntityClient.EntityConnection");
+                throw new InvalidOperationException("No provider supporting the upsert operation");
+            }
+
+            var connectionToUse = connection ?? con.StoreConnection;
+            var currentType = typeof(TEntity);
+            var provider = Configuration.Providers.FirstOrDefault(p => p.CanHandle(connectionToUse));
+            if (provider != null && provider.CanBulkUpdate)
+            {
+
+                var mapping = EfMappingFactory.GetMappingsForContext(this.dbContext);
+                var typeMapping = mapping.TypeMappings[typeof(T)];
+                var tableMapping = typeMapping.TableMappings.First();
+
+                var properties = tableMapping.PropertyMappings
+                    .Where(p => currentType.IsSubclassOf(p.ForEntityType) || p.ForEntityType == currentType)
+                    .Select(p => new ColumnMapping
+                    {
+                        NameInDatabase = p.ColumnName,
+                        NameOnObject = p.PropertyName,
+                        DataType = p.DataTypeFull,
+                        IsPrimaryKey = p.IsPrimaryKey,
+                        IsStoreGeneratedIdentity = p.IsStoreGeneratedIdentity,
+                    }).ToList();
+
+                HashSet<string> columnsToMatch;
+                if (identitySpecification != null)
+                {
+                    var identity = new IdentitySpecification<TEntity>();
+                    identitySpecification(identity);
+                    columnsToMatch = new HashSet<string>(identity.Properties.Select(p => p.GetPropertyName()));
+                }
+                else
+                {
+                    columnsToMatch = new HashSet<string>(properties.Where(p => p.IsPrimaryKey).Select(p => p.NameOnObject));
+                }
+
+                HashSet<string> columnsToUpdate;
+                if (updateSpecification != null)
+                {
+                    var spec = new UpdateSpecification<TEntity>();
+                    updateSpecification(spec);
+                    columnsToUpdate = new HashSet<string>(spec.Properties.Select(p => p.GetPropertyName()));
+                }
+                else
+                {
+                    columnsToUpdate = new HashSet<string>(properties.Where(p => !p.IsPrimaryKey).Select(p => p.NameOnObject));
+                }
+
+                provider.UpsertImtes(items, tableMapping.Schema, tableMapping.TableName, properties, connectionToUse, batchSize, columnsToMatch, columnsToUpdate);
+            }
+            else
+            {
+                Configuration.Log("Found provider: " + (provider == null ? "[]" : provider.GetType().Name) + " for " + connectionToUse.GetType().Name);
+                throw new InvalidOperationException("No provider supporting the upsert operation");
             }
         }
 
@@ -247,6 +348,6 @@ namespace EntityFramework.Utilities
         }
 
 
-     
+
     }
 }

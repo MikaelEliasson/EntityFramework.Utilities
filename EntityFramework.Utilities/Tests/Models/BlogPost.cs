@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Tests.FakeDomain.Models
 {
     public class BlogPost
     {
+        [Column("BlogId")]
         public int ID { get; set; }
         public string Title { get; set; }
         public string ShortTitle { get; set; }
