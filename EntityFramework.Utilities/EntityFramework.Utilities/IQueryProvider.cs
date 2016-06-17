@@ -14,7 +14,7 @@ namespace EntityFramework.Utilities
         string GetUpdateQuery(QueryInformation predicateQueryInfo, QueryInformation modificationQueryInfo);
         void InsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize);
         void UpdateItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, UpdateSpecification<T> updateSpecification);
-        void UpsertImtes<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, HashSet<string> identitySpecification, HashSet<string> updateSpecification);
+        void UpsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, HashSet<string> identitySpecification, HashSet<string> updateSpecification);
 
         bool CanHandle(DbConnection storeConnection);
 

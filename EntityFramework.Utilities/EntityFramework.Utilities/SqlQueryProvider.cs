@@ -127,7 +127,7 @@ namespace EntityFramework.Utilities
             
         }
 
-        public void UpsertImtes<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, HashSet<string> columnsToIdentity, HashSet<string> columnsToUpdate)
+        public void UpsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, HashSet<string> columnsToIdentity, HashSet<string> columnsToUpdate)
         {
             var tempTableName = "#temp_" + tableName + "_" + DateTime.Now.Ticks;
 

@@ -267,7 +267,7 @@ namespace EntityFramework.Utilities
                     columnsToUpdate = new HashSet<string>(properties.Where(p => !p.IsPrimaryKey).Select(p => p.NameOnObject));
                 }
 
-                provider.UpsertImtes(items, tableMapping.Schema, tableMapping.TableName, properties, connectionToUse, batchSize, columnsToMatch, columnsToUpdate);
+                provider.UpsertItems(items, tableMapping.Schema, tableMapping.TableName, properties, connectionToUse, batchSize, columnsToMatch, columnsToUpdate);
             }
             else
             {
