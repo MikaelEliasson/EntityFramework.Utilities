@@ -9,6 +9,7 @@ using System.Data.Entity.Infrastructure;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EntityFramework.Utilities
 {
@@ -116,6 +117,7 @@ namespace EntityFramework.Utilities
 
                 var properties = tableMapping.PropertyMappings
                     .Where(p => currentType.IsSubclassOf(p.ForEntityType) || p.ForEntityType == currentType)
+                    .Where(p => p.IsComputed == false)
                     .Select(p => new ColumnMapping { NameInDatabase = p.ColumnName, NameOnObject = p.PropertyName }).ToList();
                 if (tableMapping.TPHConfiguration != null)
                 {
@@ -157,6 +159,7 @@ namespace EntityFramework.Utilities
 
                 var properties = tableMapping.PropertyMappings
                     .Where(p => currentType.IsSubclassOf(p.ForEntityType) || p.ForEntityType == currentType)
+                    .Where(p => p.IsComputed == false)
                     .Select(p => new ColumnMapping { 
                         NameInDatabase = p.ColumnName, 
                         NameOnObject = p.PropertyName, 
