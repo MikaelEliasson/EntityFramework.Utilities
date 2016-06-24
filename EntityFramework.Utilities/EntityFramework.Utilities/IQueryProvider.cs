@@ -20,9 +20,8 @@ namespace EntityFramework.Utilities
 
         bool CanHandle(DbConnection storeConnection);
 
-
         QueryInformation GetQueryInformation<T>(System.Data.Entity.Core.Objects.ObjectQuery<T> query);
 
-
+        DbParameter ParameterFactory(string name, object value);
     }
 }
