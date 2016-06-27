@@ -97,18 +97,18 @@ namespace EntityFramework.Utilities
                 con.Open();
             }
 
-            var setters = string.Join(",", filtered.Where(c => !c.IsPrimaryKey).Select(c => "[" + c.NameInDatabase + "] = TEMP.[" + c.NameInDatabase + "]"));
+            var setters = string.Join(",", filtered.Where(c => !c.IsPrimaryKey).Select(c => "ORIG.[" + c.NameInDatabase + "] = TEMP.[" + c.NameInDatabase + "]"));
             var pks = properties.Where(p => p.IsPrimaryKey).Select(x => "ORIG.[" + x.NameInDatabase + "] = TEMP.[" + x.NameInDatabase + "]");
             var filter = string.Join(" and ",  pks);
-            var mergeCommand =  string.Format(@"UPDATE [{0}]
+            var mergeCommand = string.Format(@"UPDATE ORIG
                 SET
-                    {3}
+                    {0}
                 FROM
-                    [{0}] ORIG
+                    [{1}].[{2}] ORIG
                 INNER JOIN
-                     [{1}] TEMP
+                    [{1}].[{3}] TEMP
                 ON 
-                    {2}", tableName, tempTableName, filter, setters);
+                    {4}", setters, schema, tableName, tempTableName, filter);
 
             using (var createCommand = new SqlCommand(str, con))
             using (var mCommand = new SqlCommand(mergeCommand, con))
