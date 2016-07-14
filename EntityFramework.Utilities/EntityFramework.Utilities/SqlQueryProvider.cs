@@ -49,7 +49,7 @@ namespace EntityFramework.Utilities
 
         public void InsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize)
         {
-            using (var reader = new EFDataReader<T>(items, properties))
+            using (var reader = new EFDataReader<T>(items))
             {
                 var con = storeConnection as SqlConnection;
                 if (con.State != System.Data.ConnectionState.Open)
