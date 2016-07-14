@@ -1,4 +1,5 @@
-﻿using System;
+using Microsoft.SqlServer.Types;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -11,51 +12,14 @@ namespace EntityFramework.Utilities
     {
         public IEnumerable<T> Items { get; set; }
         public IEnumerator<T> Enumerator { get; set; }
-        public IList<string> Properties { get; set; }
-        public List<Func<T, object>> Accessors { get; set; }
-
-        public EFDataReader(IEnumerable<T> items, IEnumerable<ColumnMapping> properties)
+        public IList<string> PropertyNames { get; set; }
+        public IList<PropertyInfo> Properties { get; set; }
+        public EFDataReader(IEnumerable<T> items)
         {
-            Properties = properties.Select(p => p.NameOnObject).ToList();
-            Accessors = properties.Select(p =>
-            {
-                if (p.StaticValue != null)
-                {
-                    Func<T,object> func = x => p.StaticValue;
-                    return func;
-                }
-
-                var parts = p.NameOnObject.Split('.');
-
-                PropertyInfo info = typeof(T).GetProperty(parts[0]);
-                var method = typeof(EFDataReader<T>).GetMethod("MakeDelegate");
-                var generic = method.MakeGenericMethod(info.PropertyType);
-
-                var getter = (Func<T, object>)generic.Invoke(this, new object[] { info.GetGetMethod(true) });
-
-                var temp = info;
-                foreach (var part in parts.Skip(1))
-                {
-                    var i = temp.PropertyType.GetProperty(part);
-                    var g =  i.GetGetMethod();
-
-                    var old = getter;
-                    getter = x => g.Invoke(old(x), null);
-
-                    temp = i;
-                }
-
-                
-                return getter;
-            }).ToList();
+            Properties = typeof(T).GetProperties().ToList();
+            PropertyNames = Properties.Select(p => p.Name).ToList();
             Items = items;
             Enumerator = items.GetEnumerator();
-        }
-
-        public static Func<T, object> MakeDelegate<U>(MethodInfo @get)
-        {
-            var f = (Func<T, U>)Delegate.CreateDelegate(typeof(Func<T, U>), @get);
-            return t => f(t);
         }
 
         public override void Close()
@@ -95,7 +59,16 @@ namespace EntityFramework.Utilities
 
         public override object GetValue(int ordinal)
         {
-            return this.Accessors[ordinal](this.Enumerator.Current);
+            if (Properties[ordinal].PropertyType == typeof(DbGeography))
+            {
+                var data = Properties[ordinal].GetValue(this.Enumerator.Current, null) as DbGeography;
+                if (data != null)
+                {
+                    return SqlGeography.Point(data.Latitude.Value, data.Longitude.Value, 4326);
+                }
+                return null;
+            }
+            return Properties[ordinal].GetValue(this.Enumerator.Current, null);
         }
 
         public override int GetOrdinal(string name)
