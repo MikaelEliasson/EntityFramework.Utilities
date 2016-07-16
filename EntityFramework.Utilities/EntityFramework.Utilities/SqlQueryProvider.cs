@@ -58,7 +58,7 @@ namespace EntityFramework.Utilities
                 }
                 using (SqlBulkCopy copy = new SqlBulkCopy(con))
                 {
-                    copy.BatchSize = Math.Min(reader.RecordsAffected, batchSize ?? 15000); //default batch size
+                    copy.BatchSize = batchSize ?? 15000; //default batch size
                     if (!string.IsNullOrWhiteSpace(schema))
                     {
                         copy.DestinationTableName = string.Format("[{0}].[{1}]", schema, tableName);

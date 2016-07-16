@@ -102,6 +102,7 @@ namespace EntityFramework.Utilities
             {
                 Configuration.Log("No provider could be found because the Connection didn't implement System.Data.EntityClient.EntityConnection");
                 Fallbacks.DefaultInsertAll(context, items);
+                return;
             }
 
             var connectionToUse = connection ?? con.StoreConnection;
