@@ -89,7 +89,7 @@ namespace EntityFramework.Utilities
 
         public override int RecordsAffected
         {
-            get { return this.Items.Count(); }
+            get { throw new NotImplementedException(); }
         }
 
 
