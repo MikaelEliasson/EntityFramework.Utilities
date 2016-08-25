@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace EntityFramework.Utilities
@@ -83,7 +82,7 @@ namespace EntityFramework.Utilities
 
         public void UpdateItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, UpdateSpecification<T> updateSpecification)
         {
-            var tempTableName = "temp_" + tableName + "_" + DateTime.Now.Ticks;
+            var tempTableName = "#temp_" + tableName + "_" + DateTime.Now.Ticks;
             var columnsToUpdate = updateSpecification.Properties.Select(p => p.GetPropertyName()).ToDictionary(x => x);
             var filtered = properties.Where(p => columnsToUpdate.ContainsKey(p.NameOnObject) || p.IsPrimaryKey).ToList();
             var columns = filtered.Select(c => "[" + c.NameInDatabase + "] " + c.DataType);
@@ -110,9 +109,14 @@ namespace EntityFramework.Utilities
                 ON 
                     {2}", tableName, tempTableName, filter, setters);
 
+            var dropCommand = $@"IF Object_id('tempdb..{tempTableName}') IS NOT NULL 
+    BEGIN DROP TABLE {tempTableName} END
+   ELSE
+    BEGIN THROW 51000,'Drop temp table {tempTableName} fail.',1; END";
+
             using (var createCommand = new SqlCommand(str, con))
             using (var mCommand = new SqlCommand(mergeCommand, con))
-            using (var dCommand = new SqlCommand(string.Format("DROP table {0}.[{1}]", schema, tempTableName), con))
+            using (var dCommand = new SqlCommand(dropCommand, con))
             {
                 createCommand.ExecuteNonQuery();
                 InsertItems(items, schema, tempTableName, filtered, storeConnection, batchSize);
@@ -121,6 +125,56 @@ namespace EntityFramework.Utilities
             }
 
             
+        }
+
+        public void UpsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, HashSet<string> columnsToIdentity, HashSet<string> columnsToUpdate)
+        {
+            var tempTableName = "#temp_" + tableName + "_" + DateTime.Now.Ticks;
+
+            var str = $@"CREATE TABLE {schema}.[{tempTableName}] (
+{string.Join(", ", properties.Select(c => "[" + c.NameInDatabase + "] " + c.DataType))}, 
+    PRIMARY KEY ({string.Join(", ", properties.Where(p => p.IsPrimaryKey).Select(c => "[" + c.NameInDatabase + "]"))})
+)";
+
+            var con = storeConnection as SqlConnection;
+            if (con.State != System.Data.ConnectionState.Open)
+            {
+                con.Open();
+            }
+
+            var insertProperties = properties.Where(p => !p.IsStoreGeneratedIdentity).Select(p => p.NameInDatabase).ToArray();
+            string mergeCommand =
+ $@"merge into [{tableName}] as Target 
+	 using {tempTableName} as Source 
+	 	on {string.Join(" and ", properties
+            .Where(p => columnsToIdentity.Contains(p.NameOnObject))
+            .Select(p => $"Target.{p.NameInDatabase}=Source.{p.NameInDatabase}"))}            
+	 when matched then 
+	 update set {string.Join(",", properties
+        .Where(p => columnsToUpdate.Contains(p.NameOnObject) && !p.IsPrimaryKey)
+        .Select(p => "Target.[" + p.NameInDatabase + "] = Source.[" + p.NameInDatabase + "]"))}
+	 when not matched then 
+	 insert (
+	  {string.Join(",", insertProperties)}
+	 ) values (
+      {string.Join(",", insertProperties.Select(p=>$"Source.{p}"))}
+	);";
+
+
+            var dropCommand = $@"IF Object_id('tempdb..{tempTableName}') IS NOT NULL 
+    BEGIN DROP TABLE {tempTableName} END
+   ELSE
+    BEGIN THROW 51000,'Drop temp table {tempTableName} fail.',1; END";
+
+            using (var createCommand = new SqlCommand(str, con))
+            using (var mCommand = new SqlCommand(mergeCommand, con))
+            using (var dCommand = new SqlCommand(dropCommand, con))
+            {
+                createCommand.ExecuteNonQuery();
+                InsertItems(items, schema, tempTableName, properties, storeConnection, batchSize);
+                mCommand.ExecuteNonQuery();
+                dCommand.ExecuteNonQuery();
+            }
         }
 
 

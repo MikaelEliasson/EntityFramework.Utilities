@@ -68,7 +68,9 @@
     </When>
     <Otherwise>
       <ItemGroup>
-        <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework" />
+        <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework">
+          <Private>False</Private>
+        </Reference>
       </ItemGroup>
     </Otherwise>
   </Choose>
@@ -78,6 +80,7 @@
     <Compile Include="AttachAndModifyTest.cs" />
     <Compile Include="Models\MultiPKObject.cs" />
     <Compile Include="Models\NumericTestObject.cs" />
+    <Compile Include="MergeTest.cs" />
     <Compile Include="UpdateBulkTests.cs" />
     <Compile Include="FakeDomain\Contact.cs" />
     <Compile Include="FakeDomain\Email.cs" />

@@ -10,9 +10,9 @@ using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Infrastructure;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Xml;
 using System.Xml.Linq;
-using System.Reflection;
 
 namespace EntityFramework.Utilities
 {
@@ -94,6 +94,7 @@ namespace EntityFramework.Utilities
         public bool IsPrimaryKey { get; set; }
 
         public string DataTypeFull { get; set; }
+        public bool IsStoreGeneratedIdentity { get; set; }
     }
 
     /// <summary>
@@ -122,7 +123,7 @@ namespace EntityFramework.Utilities
             var conceptualContainer = metadata.GetItems<EntityContainer>(DataSpace.CSpace).Single();
 
             // Storage part of the model has info about the shape of our tables
-            var storeContainer = metadata.GetItems<EntityContainer>(DataSpace.SSpace).Single();
+            var storeContainer = metadata.GetItems(DataSpace.SSpace).OfType<EntityType>();
 
             // Object part of the model that contains info about the actual CLR types
             var objectItemCollection = ((ObjectItemCollection)metadata.GetItemCollection(DataSpace.OSpace));
@@ -189,17 +190,20 @@ namespace EntityFramework.Utilities
                 if (mapping.EntityTypeMappings.Any(m => m.IsHierarchyMapping))
                 {
                     var withConditions = mapping.EntityTypeMappings.Where(m => m.Fragments[0].Conditions.Any()).ToList();
-                    tableMapping.TPHConfiguration = new TPHConfiguration
-                       {
-                           ColumnName = withConditions.First().Fragments[0].Conditions[0].Column.Name,
-                           Mappings = new Dictionary<Type, string>()
-                       };
-                    foreach (var item in withConditions)
+                    if (withConditions.Any()) // TPT will not have condition
                     {
-                        tableMapping.TPHConfiguration.Mappings.Add(
-                            getClr(item.Fragments[0]),
-                            ((ValueConditionMapping)item.Fragments[0].Conditions[0]).Value.ToString()
-                            );
+                        tableMapping.TPHConfiguration = new TPHConfiguration
+                        {
+                            ColumnName = withConditions.First().Fragments[0].Conditions[0].Column.Name,
+                            Mappings = new Dictionary<Type, string>()
+                        };
+                        foreach (var item in withConditions)
+                        {
+                            tableMapping.TPHConfiguration.Mappings.Add(
+                                getClr(item.Fragments[0]),
+                                ((ValueConditionMapping)item.Fragments[0].Conditions[0]).Value.ToString()
+                                );
+                        }
                     }
                 }
 
@@ -220,6 +224,11 @@ namespace EntityFramework.Utilities
                     if ((mappingToLookAt.EntityType ?? mappingToLookAt.IsOfEntityTypes[0]).KeyProperties.Any(p => p.Name == item.PropertyName))
                     {
                         item.IsPrimaryKey = true;
+                        item.IsStoreGeneratedIdentity = storeContainer.FirstOrDefault(t => t.Name == item.ForEntityType.Name)
+                            ?.Properties
+                            ?.FirstOrDefault(p => p.Name == item.ColumnName)
+                            ?.IsStoreGeneratedIdentity 
+                            ?? false;
                     }
                 }
             }
