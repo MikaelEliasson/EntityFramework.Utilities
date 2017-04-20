@@ -47,7 +47,7 @@ namespace EntityFramework.Utilities
             return string.Format("UPDATE [{0}].[{1}] SET {2} {3}", predicateQueryInfo.Schema, predicateQueryInfo.Table, updateSql, predicateQueryInfo.WhereSql);
         }
 
-        public void InsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize)
+        public void InsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, int? executeTimeout = null)
         {
             using (var reader = new EFDataReader<T>(items, properties))
             {
@@ -81,7 +81,7 @@ namespace EntityFramework.Utilities
         }
 
 
-        public void UpdateItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, UpdateSpecification<T> updateSpecification)
+        public void UpdateItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, UpdateSpecification<T> updateSpecification, int? executeTimeout = null)
         {
             var tempTableName = "temp_" + tableName + "_" + DateTime.Now.Ticks;
             var columnsToUpdate = updateSpecification.Properties.Select(p => p.GetPropertyName()).ToDictionary(x => x);
@@ -114,6 +114,9 @@ namespace EntityFramework.Utilities
             using (var mCommand = new SqlCommand(mergeCommand, con))
             using (var dCommand = new SqlCommand(string.Format("DROP table {0}.[{1}]", schema, tempTableName), con))
             {
+                createCommand.CommandTimeout = executeTimeout ?? 600;
+                mCommand.CommandTimeout = executeTimeout ?? 600;
+
                 createCommand.ExecuteNonQuery();
                 InsertItems(items, schema, tempTableName, filtered, storeConnection, batchSize);
                 mCommand.ExecuteNonQuery();
