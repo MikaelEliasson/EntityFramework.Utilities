@@ -47,7 +47,7 @@ namespace EntityFramework.Utilities
             return string.Format("UPDATE [{0}].[{1}] SET {2} {3}", predicateQueryInfo.Schema, predicateQueryInfo.Table, updateSql, predicateQueryInfo.WhereSql);
         }
 
-        public void InsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize)
+        public void InsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, SqlTransaction transaction)
         {
             using (var reader = new EFDataReader<T>(items, properties))
             {
@@ -56,7 +56,7 @@ namespace EntityFramework.Utilities
                 {
                     con.Open();
                 }
-                using (SqlBulkCopy copy = new SqlBulkCopy(con))
+                using (SqlBulkCopy copy = new SqlBulkCopy(con, SqlBulkCopyOptions.Default, transaction))
                 {
                     copy.BatchSize = Math.Min(reader.RecordsAffected, batchSize ?? 15000); //default batch size
                     if (!string.IsNullOrWhiteSpace(schema))
@@ -81,9 +81,9 @@ namespace EntityFramework.Utilities
         }
 
 
-        public void UpdateItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, UpdateSpecification<T> updateSpecification)
+        public void UpdateItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, UpdateSpecification<T> updateSpecification, SqlTransaction transaction)
         {
-            var tempTableName = "temp_" + tableName + "_" + DateTime.Now.Ticks;
+            var tempTableName = "temp_" + tableName + "_" + Guid.NewGuid();
             var columnsToUpdate = updateSpecification.Properties.Select(p => p.GetPropertyName()).ToDictionary(x => x);
             var filtered = properties.Where(p => columnsToUpdate.ContainsKey(p.NameOnObject) || p.IsPrimaryKey).ToList();
             var columns = filtered.Select(c => "[" + c.NameInDatabase + "] " + c.DataType);
@@ -115,7 +115,7 @@ namespace EntityFramework.Utilities
             using (var dCommand = new SqlCommand(string.Format("DROP table {0}.[{1}]", schema, tempTableName), con))
             {
                 createCommand.ExecuteNonQuery();
-                InsertItems(items, schema, tempTableName, filtered, storeConnection, batchSize);
+                InsertItems(items, schema, tempTableName, filtered, storeConnection, batchSize, transaction);
                 mCommand.ExecuteNonQuery();
                 dCommand.ExecuteNonQuery();
             }
