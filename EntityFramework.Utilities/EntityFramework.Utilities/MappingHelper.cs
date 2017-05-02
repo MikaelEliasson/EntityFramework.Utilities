@@ -212,7 +212,7 @@ namespace EntityFramework.Utilities
                 }
 
                 //Inheriting propertymappings contains duplicates for id's. 
-                tableMapping.PropertyMappings = tableMapping.PropertyMappings.GroupBy(p => p.PropertyName)
+                tableMapping.PropertyMappings = tableMapping.PropertyMappings.GroupBy(p => p.ColumnName)
                     .Select(g => g.OrderByDescending(outer => g.Count(inner => inner.ForEntityType.IsSubclassOf(outer.ForEntityType))).First())
                     .ToList();
                 foreach (var item in tableMapping.PropertyMappings)
@@ -305,11 +305,17 @@ namespace EntityFramework.Utilities
             EfMapping mapping;
             if (!cache.TryGetValue(type, out mapping))
             {
-                mapping = new EfMapping(context);
-                cache.Add(type, mapping);
+                //lock only if we don't have the item in the cache
+                lock (cache)
+                {
+                    if (!cache.TryGetValue(type, out mapping))
+                    {
+                        mapping = new EfMapping(context);
+                        cache.Add(type, mapping);
+                    }
+                }
             }
             return mapping;
         }
-
     }
 }
