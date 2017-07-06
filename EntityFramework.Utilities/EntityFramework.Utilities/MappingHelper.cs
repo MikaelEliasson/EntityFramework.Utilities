@@ -227,7 +227,10 @@ namespace EntityFramework.Utilities
 
         private string GetFullTypeName(ScalarPropertyMapping scalar)
         {
-            if (scalar.Column.TypeName == "nvarchar" || scalar.Column.TypeName == "varchar")
+            if (scalar.Column.TypeName == "nvarchar" || 
+                scalar.Column.TypeName == "varchar" ||
+                scalar.Column.TypeName == "nchar" ||
+                scalar.Column.TypeName == "char")
             {
                 return string.Format("{0}({1})", scalar.Column.TypeName, scalar.Column.MaxLength);
             }
