@@ -21,7 +21,7 @@ namespace EntityFramework.Utilities
         /// <param name="items">The items to insert</param>
         /// <param name="connection">The DbConnection to use for the insert. Only needed when for example a profiler wraps the connection. Then you need to provide a connection of the type the provider use.</param>
         /// <param name="batchSize">The size of each batch. Default depends on the provider. SqlProvider uses 15000 as default</param>        
-        void InsertAll<TEntity>(IEnumerable<TEntity> items, DbConnection connection = null, int? batchSize = null) where TEntity : class, T; 
+        void InsertAll<TEntity>(IEnumerable<TEntity> items, DbConnection connection = null, int? batchSize = null, SqlBulkCopyOptions copyOptions = SqlBulkCopyOptions.Default, SqlTransaction transaction = null) where TEntity : class, T; 
         IEFBatchOperationFiltered<TContext, T> Where(Expression<Func<T, bool>> predicate);
 
 
@@ -95,7 +95,7 @@ namespace EntityFramework.Utilities
         /// <param name="items">The items to insert</param>
         /// <param name="connection">The DbConnection to use for the insert. Only needed when for example a profiler wraps the connection. Then you need to provide a connection of the type the provider use.</param>
         /// <param name="batchSize">The size of each batch. Default depends on the provider. SqlProvider uses 15000 as default</param>
-        public void InsertAll<TEntity>(IEnumerable<TEntity> items, DbConnection connection = null, int? batchSize = null) where TEntity : class, T
+        public void InsertAll<TEntity>(IEnumerable<TEntity> items, DbConnection connection = null, int? batchSize = null, SqlBulkCopyOptions copyOptions = SqlBulkCopyOptions.Default, SqlTransaction transaction = null) where TEntity : class, T
         {
             var con = context.Connection as EntityConnection;
             if (con == null && connection == null)
@@ -126,7 +126,7 @@ namespace EntityFramework.Utilities
                     });
                 }
 
-                provider.InsertItems(items, tableMapping.Schema, tableMapping.TableName, properties, connectionToUse, batchSize);
+                provider.InsertItems(items, tableMapping.Schema, tableMapping.TableName, properties, connectionToUse, batchSize, copyOptions, transaction);
             }
             else
             {
