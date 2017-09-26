@@ -22,6 +22,7 @@ namespace EntityFramework.Utilities
         /// <param name="connection">The DbConnection to use for the insert. Only needed when for example a profiler wraps the connection. Then you need to provide a connection of the type the provider use.</param>
         /// <param name="batchSize">The size of each batch. Default depends on the provider. SqlProvider uses 15000 as default</param>        
         void InsertAll<TEntity>(IEnumerable<TEntity> items, DbConnection connection = null, int? batchSize = null, int? executeTimeout = null) where TEntity : class, T;
+
         IEFBatchOperationFiltered<TContext, T> Where(Expression<Func<T, bool>> predicate);
 
 
@@ -117,6 +118,7 @@ namespace EntityFramework.Utilities
                 var properties = tableMapping.PropertyMappings
                     .Where(p => currentType.IsSubclassOf(p.ForEntityType) || p.ForEntityType == currentType)
                     .Select(p => new ColumnMapping { NameInDatabase = p.ColumnName, NameOnObject = p.PropertyName }).ToList();
+
                 if (tableMapping.TPHConfiguration != null)
                 {
                     properties.Add(new ColumnMapping

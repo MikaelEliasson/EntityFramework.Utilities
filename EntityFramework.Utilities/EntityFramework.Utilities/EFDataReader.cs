@@ -36,17 +36,24 @@ namespace EntityFramework.Utilities
                 var temp = info;
                 foreach (var part in parts.Skip(1))
                 {
-                    var i = temp.PropertyType.GetProperty(part);
-                    var g =  i.GetGetMethod();
+                    try
+                    {
+                        var i = temp.PropertyType.GetProperty(part);
+                        var g = i.GetGetMethod();
 
-                    var old = getter;
-                    getter = x => g.Invoke(old(x), null);
+                        var old = getter;
+                        getter = x => g.Invoke(old(x), null);
 
-                    temp = i;
+                        temp = i;
+                    }
+                    catch (Exception ex)
+                    {
+                        throw ex;
+                    }
                 }
-
-                
+                                
                 return getter;
+
             }).ToList();
             Items = items;
             Enumerator = items.GetEnumerator();
