@@ -186,14 +186,19 @@ namespace EntityFramework.Utilities
                     return GetClrTypeFromTypeMapping(metadata, objectItemCollection, m.TypeMapping as EntityTypeMapping);
                 };
 
+
                 if (mapping.EntityTypeMappings.Any(m => m.IsHierarchyMapping))
                 {
                     var withConditions = mapping.EntityTypeMappings.Where(m => m.Fragments[0].Conditions.Any()).ToList();
-                    tableMapping.TPHConfiguration = new TPHConfiguration
-                       {
-                           ColumnName = withConditions.First().Fragments[0].Conditions[0].Column.Name,
-                           Mappings = new Dictionary<Type, string>()
-                       };
+
+                    if (withConditions.Count > 0)
+                    {
+                        tableMapping.TPHConfiguration = new TPHConfiguration
+                        {
+                            ColumnName = withConditions.First().Fragments[0].Conditions[0].Column.Name,
+                            Mappings = new Dictionary<Type, string>()
+                        };
+                    }
                     foreach (var item in withConditions)
                     {
                         tableMapping.TPHConfiguration.Mappings.Add(
