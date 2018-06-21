@@ -40,14 +40,14 @@ namespace EntityFramework.Utilities
             }
             else
             {
-                updateSql = string.Join(" = ", update.Split(new string[]{" = "}, StringSplitOptions.RemoveEmptyEntries).Reverse());
+                updateSql = string.Join(" = ", update.Split(new string[] { " = " }, StringSplitOptions.RemoveEmptyEntries).Reverse());
             }
-           
+
 
             return string.Format("UPDATE [{0}].[{1}] SET {2} {3}", predicateQueryInfo.Schema, predicateQueryInfo.Table, updateSql, predicateQueryInfo.WhereSql);
         }
 
-        public void InsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize)
+        public void InsertItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, int? executeTimeout = null)
         {
             using (var reader = new EFDataReader<T>(items, properties))
             {
@@ -56,9 +56,12 @@ namespace EntityFramework.Utilities
                 {
                     con.Open();
                 }
-                using (SqlBulkCopy copy = new SqlBulkCopy(con))
+
+                using (SqlBulkCopy copy = new SqlBulkCopy(con, SqlBulkCopyOptions.TableLock, null))
                 {
+                    copy.BulkCopyTimeout = executeTimeout ?? 600;
                     copy.BatchSize = Math.Min(reader.RecordsAffected, batchSize ?? 15000); //default batch size
+
                     if (!string.IsNullOrWhiteSpace(schema))
                     {
                         copy.DestinationTableName = string.Format("[{0}].[{1}]", schema, tableName);
@@ -67,7 +70,7 @@ namespace EntityFramework.Utilities
                     {
                         copy.DestinationTableName = "[" + tableName + "]";
                     }
-                    
+
                     copy.NotifyAfter = 0;
 
                     foreach (var i in Enumerable.Range(0, reader.FieldCount))
@@ -81,7 +84,7 @@ namespace EntityFramework.Utilities
         }
 
 
-        public void UpdateItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, UpdateSpecification<T> updateSpecification)
+        public void UpdateItems<T>(IEnumerable<T> items, string schema, string tableName, IList<ColumnMapping> properties, DbConnection storeConnection, int? batchSize, UpdateSpecification<T> updateSpecification, int? executeTimeout = null)
         {
             var tempTableName = "temp_" + tableName + "_" + DateTime.Now.Ticks;
             var columnsToUpdate = updateSpecification.Properties.Select(p => p.GetPropertyName()).ToDictionary(x => x);
@@ -99,28 +102,31 @@ namespace EntityFramework.Utilities
 
             var setters = string.Join(",", filtered.Where(c => !c.IsPrimaryKey).Select(c => "[" + c.NameInDatabase + "] = TEMP.[" + c.NameInDatabase + "]"));
             var pks = properties.Where(p => p.IsPrimaryKey).Select(x => "ORIG.[" + x.NameInDatabase + "] = TEMP.[" + x.NameInDatabase + "]");
-            var filter = string.Join(" and ",  pks);
-            var mergeCommand =  string.Format(@"UPDATE [{0}]
+            var filter = string.Join(" and ", pks);
+            var mergeCommand = string.Format(@"UPDATE {0}.[{1}]
                 SET
-                    {3}
+                    {4}
                 FROM
-                    [{0}] ORIG
+                    {0}.[{1}] ORIG
                 INNER JOIN
-                     [{1}] TEMP
+                     {0}.[{2}] TEMP
                 ON 
-                    {2}", tableName, tempTableName, filter, setters);
+                    {3}", schema, tableName, tempTableName, filter, setters);
 
             using (var createCommand = new SqlCommand(str, con))
             using (var mCommand = new SqlCommand(mergeCommand, con))
             using (var dCommand = new SqlCommand(string.Format("DROP table {0}.[{1}]", schema, tempTableName), con))
             {
+                createCommand.CommandTimeout = executeTimeout ?? 600;
+                mCommand.CommandTimeout = executeTimeout ?? 600;
+
                 createCommand.ExecuteNonQuery();
                 InsertItems(items, schema, tempTableName, filtered, storeConnection, batchSize);
                 mCommand.ExecuteNonQuery();
                 dCommand.ExecuteNonQuery();
             }
 
-            
+
         }
 
 
