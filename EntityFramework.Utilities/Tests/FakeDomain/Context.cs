@@ -1,5 +1,4 @@
-﻿using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
+﻿using Microsoft.EntityFrameworkCore;
 using Tests.FakeDomain.Models;
 using Tests.Models;
 
@@ -7,10 +6,12 @@ namespace Tests.FakeDomain
 {
     public class Context : DbContext
     {
-        private Context(string connectionString)
-            : base(connectionString)
-        {
+        private string con;
 
+        private Context(string connectionString)
+            : base()
+        {
+            this.con = connectionString;
         }
 
         public DbSet<BlogPost> BlogPosts { get; set; }
@@ -22,16 +23,16 @@ namespace Tests.FakeDomain
         public DbSet<NumericTestObject> NumericTestsObjects { get; set; }
         public DbSet<MultiPKObject> MultiPKObjects { get; set; }
 
-        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.ComplexType<AuthorInfo>();
-            modelBuilder.ComplexType<Address>();
+            modelBuilder.Owned<AuthorInfo>();
+            modelBuilder.Owned<Address>();
 
             //Table per Type Hierarchy setup
-            modelBuilder.Entity<Person>()
-                .Map<Person>(m => m.Requires("Type").HasValue("Person"))
-                .Map<Contact>(m => m.Requires("Type").HasValue("Contact"));
+            //modelBuilder.Entity<Person>()
+            //    .Map<Person>(m => m.Requires("Type").HasValue("Person"))
+            //    .Map<Contact>(m => m.Requires("Type").HasValue("Contact"));
 
             modelBuilder.Entity<MultiPKObject>().HasKey(x => new { x.PK1, x.PK2 });
 
@@ -44,33 +45,18 @@ namespace Tests.FakeDomain
 
         public static Context Sql()
         {
-            Database.SetInitializer<Context>(null);
-            Database.DefaultConnectionFactory = new SqlConnectionFactory("System.Data.SqlServer");
+            //Database.SetInitializer<Context>(null);
 
-            var ctx = new Context(ConnectionStringReader.ConnectionStrings.SqlServer);
-            ctx.Configuration.ValidateOnSaveEnabled = false;
-            ctx.Configuration.LazyLoadingEnabled = false;
-            ctx.Configuration.ProxyCreationEnabled = false;
-            ctx.Configuration.AutoDetectChangesEnabled = false;
-
+            var ctx = new Context("Data Source=DESKTOP-K2L5BEL;Initial Catalog=BatchTests;Integrated Security=SSPI;MultipleActiveResultSets=True");
+            ctx.Database.EnsureCreated();
 
             return ctx;
         }
 
-        public static Context SqlCe()
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            Database.SetInitializer<Context>(null);
-            var def = Database.DefaultConnectionFactory;
-            Database.DefaultConnectionFactory = new SqlCeConnectionFactory("System.Data.SqlServerCe.4.0");
-
-            var ctx = new Context(ConnectionStringReader.ConnectionStrings.SqlCe);
-            ctx.Configuration.ValidateOnSaveEnabled = false;
-            ctx.Configuration.LazyLoadingEnabled = false;
-            ctx.Configuration.ProxyCreationEnabled = false;
-            ctx.Configuration.AutoDetectChangesEnabled = false;
-
-
-            return ctx;
+            base.OnConfiguring(optionsBuilder);
+            optionsBuilder.UseSqlServer(this.con);
         }
 
     }

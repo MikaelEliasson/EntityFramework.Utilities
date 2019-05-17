@@ -1,5 +1,4 @@
-﻿using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
+﻿using Microsoft.EntityFrameworkCore;
 using Tests.FakeDomain.Models;
 
 namespace Tests.FakeDomain
@@ -7,18 +6,19 @@ namespace Tests.FakeDomain
     public class RenamedAndReorderedContext : DbContext
     {
         public RenamedAndReorderedContext()
-            : base(ConnectionStringReader.ConnectionStrings.SqlServer)
+            : base()
         {
-            Database.DefaultConnectionFactory = new SqlConnectionFactory("System.Data.SqlServer");
-            Database.SetInitializer(new CreateDatabaseIfNotExists<RenamedAndReorderedContext>());
-            this.Configuration.ValidateOnSaveEnabled = false;
-            this.Configuration.LazyLoadingEnabled = false;
-            this.Configuration.ProxyCreationEnabled = false;
-            this.Configuration.AutoDetectChangesEnabled = false;
+            
         }
-        public DbSet<RenamedAndReorderedBlogPost> BlogPosts { get; set; }
 
-        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        public DbSet<RenamedAndReorderedBlogPost> BlogPosts { get; set; }
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlServer(ConnectionStringReader.ConnectionStrings.SqlServer);
+            base.OnConfiguring(optionsBuilder);
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<RenamedAndReorderedBlogPost>().ToTable("RenamedAndReorderedBlogPosts");

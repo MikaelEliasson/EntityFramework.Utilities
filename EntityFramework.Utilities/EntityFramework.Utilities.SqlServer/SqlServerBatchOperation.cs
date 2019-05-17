@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity;
-using System.Data.Entity.Core.EntityClient;
-using System.Data.Entity.Core.Objects;
-using System.Data.Entity.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
@@ -40,19 +37,17 @@ namespace EntityFramework.Utilities.SqlServer
         where T : class
         where TContext : DbContext
     {
-        private ObjectContext context;
         private DbContext dbContext;
-        private IDbSet<T> set;
+        private DbSet<T> set;
         private Expression<Func<T, bool>> predicate;
 
-        internal SqlServerBatchOperation(TContext context, IDbSet<T> set)
+        internal SqlServerBatchOperation(TContext context, DbSet<T> set)
         {
             this.dbContext = context;
-            this.context = (context as IObjectContextAdapter).ObjectContext;
             this.set = set;
         }
 
-        public static ISqlServerBatchOperationBase<TContext, T> For<TContext, T>(TContext context, IDbSet<T> set)
+        public static ISqlServerBatchOperationBase<TContext, T> For<TContext, T>(TContext context, DbSet<T> set)
             where TContext : DbContext
             where T : class
         {
@@ -61,7 +56,7 @@ namespace EntityFramework.Utilities.SqlServer
 
         private SqlConnection GetConnectionOrThrow(SqlConnection manualConnection = null)
         {
-            var con = (context.Connection as EntityConnection)?.StoreConnection as SqlConnection;
+            var con = dbContext.Database.GetDbConnection() as SqlConnection;
             if (con == null && manualConnection == null)
             {
                 throw new InvalidOperationException("No connection that can be used was found. This is usually because the connection was wrapped with for example a profiler. If so you need to supply an SqlConnection as part of the settings");
@@ -112,36 +107,39 @@ namespace EntityFramework.Utilities.SqlServer
         public async Task<int> DeleteAsync(SqlServerDeleteSettings settings = null)
         {
             settings = settings ?? new SqlServerDeleteSettings();
-            var set = context.CreateObjectSet<T>();
-            var query = (ObjectQuery<T>)set.Where(this.predicate);
-            var queryInformation = settings.Analyzer.Analyze(query);
+            var set = dbContext.Set<T>();
+            var query = set.Where(this.predicate);
 
-            var delete = settings.SqlGenerator.BuildDeleteQuery(queryInformation);
-            var parameters = query.Parameters.Select(p => new SqlParameter { Value = p.Value, ParameterName = p.Name }).ToArray<object>();
-            return await context.ExecuteStoreCommandAsync(delete, parameters);
+            throw new NotImplementedException();
+            //var queryInformation = settings.Analyzer.Analyze(query);
+
+            //var delete = settings.SqlGenerator.BuildDeleteQuery(queryInformation);
+            //var parameters = query.Parameters.Select(p => new SqlParameter { Value = p.Value, ParameterName = p.Name }).ToArray<object>();
+            //return await dbContext.Database.ExecuteSqlCommandAsync(delete, parameters);
         }
 
         public async Task<int> UpdateAsync<TP>(Expression<Func<T, TP>> prop, Expression<Func<T, TP>> modifier, SqlServerUpdateSettings settings = null)
         {
             settings = settings ?? new SqlServerUpdateSettings();
-            var set = context.CreateObjectSet<T>();
+            var set = dbContext.Set<T>();
+            throw new NotImplementedException();
 
-            var query = (ObjectQuery<T>)set.Where(predicate);
-            var queryInformation = settings.Analyzer.Analyze(query);
+            //var query = (ObjectQuery<T>)set.Where(predicate);
+            //var queryInformation = settings.Analyzer.Analyze(query);
 
-            var updateExpression = ExpressionHelper.CombineExpressions(prop, modifier);
+            //var updateExpression = ExpressionHelper.CombineExpressions(prop, modifier);
 
-            var mquery = ((ObjectQuery<T>)context.CreateObjectSet<T>().Where(updateExpression));
-            var mqueryInfo = settings.Analyzer.Analyze(mquery);
+            //var mquery = ((ObjectQuery<T>)dbContext.Set<T>().Where(updateExpression));
+            //var mqueryInfo = settings.Analyzer.Analyze(mquery);
 
-            var update = settings.SqlGenerator.BuildUpdateQuery(queryInformation, mqueryInfo);
+            //var update = settings.SqlGenerator.BuildUpdateQuery(queryInformation, mqueryInfo);
 
-            var parameters = query.Parameters
-                .Concat(mquery.Parameters)
-                .Select(p => new SqlParameter { Value = p.Value, ParameterName = p.Name })
-                .ToArray<object>();
+            //var parameters = query.Parameters
+            //    .Concat(mquery.Parameters)
+            //    .Select(p => new SqlParameter { Value = p.Value, ParameterName = p.Name })
+            //    .ToArray<object>();
 
-            return await context.ExecuteStoreCommandAsync(update, parameters);
+            //return await dbContext.Database.ExecuteSqlCommandAsync(update, parameters);
         }
 
     }

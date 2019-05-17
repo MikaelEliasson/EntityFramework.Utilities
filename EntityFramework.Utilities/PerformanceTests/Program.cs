@@ -6,7 +6,7 @@ using System.Text;
 using Tests.FakeDomain;
 using EntityFramework.Utilities;
 using Tests;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using EntityFramework.Utilities.SqlServer;
 
 namespace PerformanceTests
@@ -38,8 +38,7 @@ namespace PerformanceTests
 
             using (var db = new Context())
             {
-                db.Configuration.AutoDetectChangesEnabled = false;
-                db.Configuration.ValidateOnSaveEnabled = false;
+                db.ChangeTracker.AutoDetectChangesEnabled = false;
                 var comments = GetEntities(count).ToList();
                 stop.Start();
                 foreach (var comment in comments)
@@ -53,8 +52,7 @@ namespace PerformanceTests
 
             using (var db = new Context())
             {
-                db.Configuration.AutoDetectChangesEnabled = true;
-                db.Configuration.ValidateOnSaveEnabled = false;
+                db.ChangeTracker.AutoDetectChangesEnabled = true;
                 stop.Restart();
                 var toUpdate = db.Comments.Where(c => c.Text == "a").ToList();
                 foreach (var item in toUpdate)
@@ -68,8 +66,7 @@ namespace PerformanceTests
 
             using (var db = new Context())
             {
-                db.Configuration.AutoDetectChangesEnabled = true;
-                db.Configuration.ValidateOnSaveEnabled = false;
+                db.ChangeTracker.AutoDetectChangesEnabled = true;
                 var toUpdate = db.Comments.ToList();
                 var rand = new Random();
                 foreach (var item in toUpdate)
@@ -85,8 +82,7 @@ namespace PerformanceTests
 
             using (var db = new Context())
             {
-                db.Configuration.AutoDetectChangesEnabled = false;
-                db.Configuration.ValidateOnSaveEnabled = false;
+                db.ChangeTracker.AutoDetectChangesEnabled = false;
                 stop.Restart();
                 var toDelete = db.Comments.Where(c => c.Text == "a").ToList();
                 foreach (var item in toDelete)
@@ -100,8 +96,7 @@ namespace PerformanceTests
 
             using (var db = new Context())
             {
-                db.Configuration.AutoDetectChangesEnabled = false;
-                db.Configuration.ValidateOnSaveEnabled = false;
+                db.ChangeTracker.AutoDetectChangesEnabled = false;
                 stop.Restart();
                 var all = db.Comments.ToList();
                 foreach (var item in all)
@@ -204,20 +199,21 @@ namespace PerformanceTests
 
     public class Context : DbContext
     {
-        public Context()
-            : base("Data Source=./; Initial Catalog=EFUTest; Integrated Security=SSPI; MultipleActiveResultSets=True")
-        {
 
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlServer("Data Source=./; Initial Catalog=EFUTest; Integrated Security=SSPI; MultipleActiveResultSets=True");
+            base.OnConfiguring(optionsBuilder);
         }
 
-        public IDbSet<Comment> Comments { get; set; }
+        public DbSet<Comment> Comments { get; set; }
         public DbSet<Publication> Publications { get; set; }
 
-        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.ComplexType<Address>();
+            modelBuilder.Owned<Address>();
         }
     }
 

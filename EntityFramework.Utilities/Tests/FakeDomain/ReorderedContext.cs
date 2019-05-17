@@ -1,5 +1,4 @@
-﻿using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
+﻿using Microsoft.EntityFrameworkCore;
 using Tests.FakeDomain.Models;
 
 namespace Tests.FakeDomain
@@ -7,23 +6,23 @@ namespace Tests.FakeDomain
     public class ReorderedContext : DbContext
     {
         public ReorderedContext()
-            : base(ConnectionStringReader.ConnectionStrings.SqlServer)
+            : base()
         {
-            Database.DefaultConnectionFactory = new SqlConnectionFactory("System.Data.SqlServer");
-            Database.SetInitializer(new CreateDatabaseIfNotExists<ReorderedContext>());
-            this.Configuration.ValidateOnSaveEnabled = false;
-            this.Configuration.LazyLoadingEnabled = false;
-            this.Configuration.ProxyCreationEnabled = false;
-            this.Configuration.AutoDetectChangesEnabled = false;
         }
-        public IDbSet<ReorderedBlogPost> BlogPosts { get; set; }
+        public DbSet<ReorderedBlogPost> BlogPosts { get; set; }
 
-        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlServer(ConnectionStringReader.ConnectionStrings.SqlServer);
+            base.OnConfiguring(optionsBuilder);
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<ReorderedBlogPost>().ToTable("BlogPosts");
-            modelBuilder.ComplexType<AuthorInfo>();
-            modelBuilder.ComplexType<Address>();
+            modelBuilder.Owned<AuthorInfo>();
+            modelBuilder.Owned<Address>();
 
         }
 

@@ -1,4 +1,4 @@
-﻿using System.Data.Entity;
+﻿using Microsoft.EntityFrameworkCore;
 using System.Data.SqlClient;
 
 namespace EntityFramework.Utilities.SqlServer
@@ -10,10 +10,10 @@ namespace EntityFramework.Utilities.SqlServer
         /// </summary>
         /// <param name="db"></param>
         /// <param name="name">The name of the database to drop. Should normally not be needed as that is read from the connection string</param>
-        public static void ForceDelete(this Database db, string name = null)
+        public static void ForceDelete(this DbContext db, string name = null)
         {
-            name = name ?? GetDatabaseName(db.Connection);
-            using (SqlConnection sqlconnection = new SqlConnection(db.Connection.ConnectionString)) //Need to run this under other transaction
+            name = name ?? db.Database.GetDbConnection().Database;
+            using (SqlConnection sqlconnection = new SqlConnection(db.Database.GetDbConnection().ConnectionString)) //Need to run this under other transaction
             {
                 sqlconnection.Open();
                 // if you used master db as Initial Catalog, there is no need to change database
@@ -31,11 +31,6 @@ namespace EntityFramework.Utilities.SqlServer
 
                 deletecommand.ExecuteNonQuery();
             }
-        }
-
-        public static string GetDatabaseName(System.Data.Common.DbConnection dbConnection)
-        {
-            return new SqlConnectionStringBuilder(dbConnection.ConnectionString).InitialCatalog;
         }
 
     }

@@ -1,10 +1,10 @@
-﻿using System.Data.Entity;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace EntityFramework.Utilities.SqlServer
 {
     public class EFBatchOperation
     {
-        public static ISqlServerBatchOperationBase<TContext, T> For<TContext, T>(TContext context, IDbSet<T> set)
+        public static ISqlServerBatchOperationBase<TContext, T> For<TContext, T>(TContext context, DbSet<T> set)
             where TContext : DbContext
             where T : class
             {

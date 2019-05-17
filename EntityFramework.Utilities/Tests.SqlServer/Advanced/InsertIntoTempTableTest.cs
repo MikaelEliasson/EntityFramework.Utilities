@@ -6,7 +6,7 @@ using Tests.FakeDomain;
 using Tests.FakeDomain.Models;
 using EntityFramework.Utilities;
 using System.Linq;
-
+using Microsoft.EntityFrameworkCore;
 namespace Tests.SqlServer.Advanced
 {
     [TestClass]
@@ -40,7 +40,7 @@ namespace Tests.SqlServer.Advanced
             using (var db = Context.Sql())
             {
                 Assert.AreEqual(0, db.BlogPosts.Count());
-                var blogposts = db.Database.SqlQuery<BlogPost>("select * from dummy").ToList();
+                var blogposts = db.BlogPosts.FromSql("select * from dummy").ToList();
                 Assert.AreEqual(3, blogposts.Count);
                 Assert.AreEqual("m@m.com", blogposts.First().Author.Email);
             }

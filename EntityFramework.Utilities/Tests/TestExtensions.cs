@@ -1,5 +1,5 @@
 ﻿using EntityFramework.Utilities.SqlServer;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 
 namespace Tests
 {
@@ -7,11 +7,8 @@ namespace Tests
     {
         public static void SetupDb(this DbContext db)
         {
-            if (db.Database.Exists())
-            {
-                db.Database.ForceDelete();
-            }
-            db.Database.Create();
+            db.Database.EnsureDeleted();
+            db.Database.EnsureCreated();
         }
     }
 }

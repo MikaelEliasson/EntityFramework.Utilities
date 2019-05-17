@@ -4,7 +4,7 @@
 //using Tests.FakeDomain;
 //using System;
 //using System.Data.Entity.Core.Objects;
-//using System.Data.Entity;
+//using Microsoft.EntityFrameworkCore;
 //using Tests.FakeDomain.Models;
 
 //namespace Tests

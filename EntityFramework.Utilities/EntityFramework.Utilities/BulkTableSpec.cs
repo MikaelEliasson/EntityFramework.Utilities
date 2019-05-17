@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 
 namespace EntityFramework.Utilities
@@ -15,7 +15,7 @@ namespace EntityFramework.Utilities
         {
             var mapping = EfMappingFactory.GetMappingsForContext(context);
             var typeMapping = mapping.TypeMappings[typeof(T)];
-            var tableMapping = typeMapping.TableMappings.First();
+            var tableMapping = typeMapping.TableMapping;
 
             var properties = GetProperties(typeof(TEntity), tableMapping);
 

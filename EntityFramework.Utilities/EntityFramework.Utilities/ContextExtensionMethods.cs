@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace EntityFramework.Utilities
 {
@@ -8,9 +9,9 @@ namespace EntityFramework.Utilities
     {
         public class AttachAndModifyContext<T> where T : class{
             private DbSet<T> set;
-            private System.Data.Entity.Infrastructure.DbEntityEntry<T> entry;
+            private EntityEntry<T> entry;
 
-            public AttachAndModifyContext(DbSet<T> set, System.Data.Entity.Infrastructure.DbEntityEntry<T> entry)
+            public AttachAndModifyContext(DbSet<T> set, EntityEntry<T> entry)
             {
                 this.set = set;
                 this.entry = entry;

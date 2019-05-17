@@ -8,6 +8,7 @@ using System;
 using System.Threading.Tasks;
 using EntityFramework.Utilities.SqlServer;
 using System.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace Tests
 {
@@ -127,7 +128,8 @@ namespace Tests
                     BlogPost.Create("T2"),
                     BlogPost.Create("T3")
                 };
-                await EFBatchOperation.For(db, db.BlogPosts).InsertAllAsync(list, new SqlServerBulkSettings { Connection = db.Database.Connection as SqlConnection });
+                await EFBatchOperation.For(db, db.BlogPosts).InsertAllAsync(list, new SqlServerBulkSettings { Connection = db.Database.GetDbConnection() as SqlConnection });
+                await EFBatchOperation.For(db, db.BlogPosts).InsertAllAsync(list, new SqlServerBulkSettings { Connection = db.Database.GetDbConnection() as SqlConnection });
             }
 
             using (var db = Context.Sql())
