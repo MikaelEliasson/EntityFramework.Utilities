@@ -5,18 +5,22 @@ namespace Tests.FakeDomain
 {
     public class RenamedAndReorderedContext : DbContext
     {
-        public RenamedAndReorderedContext()
+        private string con;
+
+        public RenamedAndReorderedContext(string con)
             : base()
         {
-            
+            this.con = con;
+
+        }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            base.OnConfiguring(optionsBuilder);
+            optionsBuilder.UseSqlServer(this.con);
         }
 
         public DbSet<RenamedAndReorderedBlogPost> BlogPosts { get; set; }
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            optionsBuilder.UseSqlServer(ConnectionStringReader.ConnectionStrings.SqlServer);
-            base.OnConfiguring(optionsBuilder);
-        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -26,14 +30,14 @@ namespace Tests.FakeDomain
             modelBuilder.Entity<RenamedAndReorderedBlogPost>().Property(x => x.Reads).HasColumnName("Reads2");
         }
 
-        public static void SetupTestDb()
+        public static RenamedAndReorderedContext Sql()
         {
-            using (var db = new RenamedAndReorderedContext())
-            {
-                db.SetupDb();
-                db.Database.ExecuteSqlCommand("drop table dbo.RenamedAndReorderedBlogPosts;");
-                db.Database.ExecuteSqlCommand(RenamedAndReorderedBlogPost.CreateTableSql());
-            }
+            //Database.SetInitializer<Context>(null);
+
+            var ctx = new RenamedAndReorderedContext("Data Source=MACHINEX;Initial Catalog=BatchTests;Integrated Security=SSPI;MultipleActiveResultSets=True");
+            ctx.Database.EnsureCreated();
+
+            return ctx;
         }
 
     }

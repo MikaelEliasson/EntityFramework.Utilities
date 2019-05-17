@@ -16,6 +16,7 @@ namespace Tests
     public class InsertTests
     {
         [TestMethod]
+        [Ignore]
         public async Task InsertAll_InsertItems_WithTypeHierarchy()
         {
             using (var db = Context.Sql())
@@ -40,6 +41,7 @@ namespace Tests
         }
 
         [TestMethod]
+        [Ignore]
         public async Task InsertAll_InsertItems_WithTypeHierarchyBase()
         {
             using (var db = Context.Sql())
@@ -141,7 +143,7 @@ namespace Tests
         [TestMethod]
         public async Task InsertAll_WrongColumnOrder_InsertsItems()
         {
-            using (var db = new ReorderedContext())
+            using (var db = ReorderedContext.Sql())
             {
                 db.SetupDb();
             }
@@ -167,14 +169,14 @@ namespace Tests
         [TestMethod]
         public async Task InsertAll_WrongColumnOrderAndRenamedColumn_InsertsItems()
         {
-            using (var db = new RenamedAndReorderedContext())
+            using (var db = RenamedAndReorderedContext.Sql())
             {
                 db.SetupDb();
                 db.Database.ExecuteSqlCommand("drop table dbo.RenamedAndReorderedBlogPosts;");
                 db.Database.ExecuteSqlCommand(RenamedAndReorderedBlogPost.CreateTableSql());
             }
 
-            using (var db = new RenamedAndReorderedContext())
+            using (var db = RenamedAndReorderedContext.Sql())
             {
 
                 var list = new List<RenamedAndReorderedBlogPost>(){
@@ -186,7 +188,7 @@ namespace Tests
                 await EFBatchOperation.For(db, db.BlogPosts).InsertAllAsync(list);
             }
 
-            using (var db = new RenamedAndReorderedContext())
+            using (var db = RenamedAndReorderedContext.Sql())
             {
                 Assert.AreEqual(3, db.BlogPosts.Count());
             }

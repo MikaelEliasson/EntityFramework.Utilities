@@ -38,6 +38,7 @@ namespace Tests
         }
 
         [TestMethod]
+        [Ignore]
         public async Task UpdateBulk_CanUpdateTPH()
         {
             using (var db = Context.Sql())

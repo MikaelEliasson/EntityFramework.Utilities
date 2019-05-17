@@ -5,16 +5,20 @@ namespace Tests.FakeDomain
 {
     public class ReorderedContext : DbContext
     {
-        public ReorderedContext()
+        private string con;
+
+        public ReorderedContext(string con)
             : base()
         {
+            this.con = con;
+
         }
         public DbSet<ReorderedBlogPost> BlogPosts { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(ConnectionStringReader.ConnectionStrings.SqlServer);
             base.OnConfiguring(optionsBuilder);
+            optionsBuilder.UseSqlServer(this.con);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -24,6 +28,16 @@ namespace Tests.FakeDomain
             modelBuilder.Owned<AuthorInfo>();
             modelBuilder.Owned<Address>();
 
+        }
+
+        public static ReorderedContext Sql()
+        {
+            //Database.SetInitializer<Context>(null);
+
+            var ctx = new ReorderedContext("Data Source=MACHINEX;Initial Catalog=BatchTests;Integrated Security=SSPI;MultipleActiveResultSets=True");
+            ctx.Database.EnsureCreated();
+
+            return ctx;
         }
 
     }

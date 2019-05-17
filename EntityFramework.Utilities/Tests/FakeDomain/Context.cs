@@ -47,7 +47,7 @@ namespace Tests.FakeDomain
         {
             //Database.SetInitializer<Context>(null);
 
-            var ctx = new Context("Data Source=DESKTOP-K2L5BEL;Initial Catalog=BatchTests;Integrated Security=SSPI;MultipleActiveResultSets=True");
+            var ctx = new Context("Data Source=MACHINEX;Initial Catalog=BatchTests;Integrated Security=SSPI;MultipleActiveResultSets=True");
             ctx.Database.EnsureCreated();
 
             return ctx;

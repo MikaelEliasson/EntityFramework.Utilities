@@ -1,16 +1,12 @@
-﻿/// <summary>
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
+/// <summary>
 /// Adapted from http://romiller.com/2013/09/24/ef-code-first-mapping-between-types-tables/ 
 /// This whole file contains a hack needed because the mapping API is internal pre 6.1 atleast
 /// </summary>
 using System;
 using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
-using System.IO;
 using System.Linq;
-using System.Xml;
-using System.Xml.Linq;
-using System.Reflection;
-using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace EntityFramework.Utilities
 {
@@ -162,32 +158,7 @@ namespace EntityFramework.Utilities
                     {
                         Schema = t.SqlServer().Schema,
                         TableName = t.SqlServer().TableName,
-                        PropertyMappings = t.GetProperties()
-                                .Select(p => new PropertyMapping
-                                {
-                                    ColumnName = p.SqlServer().ColumnName,
-                                    PropertyName = p.Name,
-                                    DataType = p.SqlServer().ColumnType,
-                                    ForEntityType = t.ClrType,
-                                    IsPrimaryKey = p.IsPrimaryKey(),
-                                    IsStoreGenerated = p.SqlServer().ValueGenerationStrategy != null, // Can be null | HiLo | Identity. Only null is not generated
-                                    DataTypeFull = p.SqlServer().ColumnType,
-                                })
-                                .Union(t.GetNavigations().Where(n => n.GetTargetType().IsOwned()).SelectMany(n => {
-                                    var props = n.GetTargetType().GetProperties().Where(p => !p.IsShadowProperty).Select(p => new PropertyMapping
-                                    {
-                                        ColumnName = p.SqlServer().ColumnName,
-                                        PropertyName = p.Name,
-                                        DataType = p.SqlServer().ColumnType,
-                                        ForEntityType = t.ClrType,
-                                        DataTypeFull = p.SqlServer().ColumnType,
-                                        IsPrimaryKey = false,
-                                        IsStoreGenerated = false
-                                    });
-
-                                    return props.ToList();
-                                }))
-                                .ToList()
+                        PropertyMappings = GetProperties(t, t.ClrType, new string[0])
                     }
                 };
                 return item;
@@ -196,20 +167,43 @@ namespace EntityFramework.Utilities
             TypeMappings = model.ToDictionary(x => x.EntityType, x => x);
         }
 
-            //var metadata = ((IObjectContextAdapter)db).ObjectContext.MetadataWorkspace;
+        private static List<PropertyMapping> GetProperties(IEntityType t, Type clrType, string[] path)
+        {
+            var basePath = string.Join(".", path);
+            var props = t.GetProperties().Where(p => !p.IsShadowProperty)
+                    .Select(p => new PropertyMapping
+                    {
+                        ColumnName = p.SqlServer().ColumnName,
+                        PropertyName =  string.IsNullOrWhiteSpace(basePath) ? p.Name : basePath + "." + p.Name,
+                        DataType = p.SqlServer().ColumnType,
+                        ForEntityType = clrType, // Use to get the right type for the whole tree 
+                        IsPrimaryKey = p.IsPrimaryKey(),
+                        IsStoreGenerated = p.SqlServer().ValueGenerationStrategy != null, // Can be null | HiLo | Identity. Only null is not generated
+                        DataTypeFull = p.SqlServer().ColumnType,
+                    }).ToList();
 
-            ////EF61Test(metadata);
+            foreach (var nav in t.GetNavigations().Where(n => n.GetTargetType().IsOwned()))
+            {
+                props.AddRange(GetProperties(nav.GetTargetType(), clrType, path.Concat(new string[] { nav.Name }).ToArray()));
+            }
 
-            //// Conceptual part of the model has info about the shape of our entity classes
-            //var conceptualContainer = metadata.GetItems<EntityContainer>(DataSpace.CSpace).Single();
+            return props;
+        }
 
-            //// Storage part of the model has info about the shape of our tables
-            //var storeContainer = metadata.GetItems<EntityContainer>(DataSpace.SSpace).Single();
+        //var metadata = ((IObjectContextAdapter)db).ObjectContext.MetadataWorkspace;
 
-            //// Object part of the model that contains info about the actual CLR types
-            //var objectItemCollection = ((ObjectItemCollection)metadata.GetItemCollection(DataSpace.OSpace));
+        ////EF61Test(metadata);
 
-            // Loop thru each entity type in the model
+        //// Conceptual part of the model has info about the shape of our entity classes
+        //var conceptualContainer = metadata.GetItems<EntityContainer>(DataSpace.CSpace).Single();
+
+        //// Storage part of the model has info about the shape of our tables
+        //var storeContainer = metadata.GetItems<EntityContainer>(DataSpace.SSpace).Single();
+
+        //// Object part of the model that contains info about the actual CLR types
+        //var objectItemCollection = ((ObjectItemCollection)metadata.GetItemCollection(DataSpace.OSpace));
+
+        // Loop thru each entity type in the model
         //    foreach (var set in conceptualContainer.BaseEntitySets.OfType<EntitySet>())
         //    {
 

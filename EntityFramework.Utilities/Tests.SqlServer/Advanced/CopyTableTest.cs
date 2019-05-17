@@ -36,6 +36,7 @@ namespace Tests.SqlServer.Advanced
 
 
         [TestMethod]
+        [Ignore]
         public void CopyTphTable()
         {
             using (var db = Context.Sql())
