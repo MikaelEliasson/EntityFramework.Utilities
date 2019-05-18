@@ -111,8 +111,9 @@ namespace EntityFramework.Utilities.SqlServer
             copy.Properties = filtered;
             copy.TableMapping.TableName = tempTableName;
 
-
-            await settings.TempSettings.Factory.TableCreator().CreateTable(con, settings.Transaction, tempSpec);
+            var tempTableCreator = settings.TempSettings.Factory.TableCreator();
+            tempTableCreator.IgnoreIdentityColumns = false;
+            await tempTableCreator.CreateTable(con, settings.Transaction, tempSpec);
 
 
             using (var mCommand = new SqlCommand(mergeCommand, con, settings.Transaction))

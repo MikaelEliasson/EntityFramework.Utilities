@@ -7,6 +7,8 @@ using Tests.FakeDomain.Models;
 using EntityFramework.Utilities;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using System;
+
 namespace Tests.SqlServer.Advanced
 {
     [TestClass]
@@ -40,9 +42,25 @@ namespace Tests.SqlServer.Advanced
             using (var db = Context.Sql())
             {
                 Assert.AreEqual(0, db.BlogPosts.Count());
-                var blogposts = db.BlogPosts.FromSql("select * from dummy").ToList();
-                Assert.AreEqual(3, blogposts.Count);
-                Assert.AreEqual("m@m.com", blogposts.First().Author.Email);
+                using (var command = db.Database.GetDbConnection().CreateCommand())
+                {
+                    command.CommandText = "SELECT ID, Title, ShortTitle, Created, Reads, Author_Name, Author_Email, Author_Address_Line1, Author_Address_ZipCode, Author_Address_Town From dummy order by Title";
+                    db.Database.OpenConnection();
+                    using (var reader = command.ExecuteReader())
+                    {
+                        reader.Read();
+
+                        Assert.AreEqual("T1", reader.GetString(1));
+                        Assert.AreEqual(DateTime.Today, reader.GetDateTime(3).Date);
+                        Assert.AreEqual("m@m.com", reader.GetString(6));
+
+                        Assert.IsTrue(reader.Read()); //Check count
+                        Assert.IsTrue(reader.Read());
+                        Assert.IsFalse(reader.Read());
+                    }
+                };
+
+
             }
         }
 
@@ -57,8 +75,9 @@ namespace Tests.SqlServer.Advanced
 
             public override Task InsertItemsAsync<T>(IEnumerable<T> items, BulkTableSpec tableSpec, SqlServerBulkSettings settings)
             {
-                tableSpec.TableMapping.TableName = tableName;
-                return base.InsertItemsAsync<T>(items, tableSpec, settings);
+                var copy = tableSpec.Copy();
+                copy.TableMapping.TableName = tableName;
+                return base.InsertItemsAsync<T>(items, copy, settings);
             }
         }
     }

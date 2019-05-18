@@ -40,14 +40,14 @@ namespace Tests.FakeDomain
             modelBuilder.Entity<BlogPost>().Property(x => x.ShortTitle).HasMaxLength(100);
 
             var n = modelBuilder.Entity<NumericTestObject>();
-            n.Property(x => x.NumericType).HasColumnType("numeric");
+            n.Property(x => x.NumericType).HasColumnType("numeric (18,2)");
         }
 
         public static Context Sql()
         {
             //Database.SetInitializer<Context>(null);
 
-            var ctx = new Context("Data Source=MACHINEX;Initial Catalog=BatchTests;Integrated Security=SSPI;MultipleActiveResultSets=True");
+            var ctx = new Context("Data Source=MACHINEX;Initial Catalog=BatchTests;Integrated Security=SSPI;MultipleActiveResultSets=True;ConnectRetryCount=0");
             ctx.Database.EnsureCreated();
 
             return ctx;

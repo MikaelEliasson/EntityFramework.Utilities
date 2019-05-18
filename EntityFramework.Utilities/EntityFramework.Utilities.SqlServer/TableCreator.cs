@@ -13,6 +13,9 @@ namespace EntityFramework.Utilities.SqlServer
         /// Create the table without Identity column even if the mappings specify it. Default: true
         /// </summary>
         public bool IgnoreIdentity { get; set; } = true;
+        /// <summary>
+        /// Skips creating PK columns
+        /// </summary>
         public bool IgnoreIdentityColumns { get; set; } = true;
         public string IdentityDefinition { get; set; } = "identity(1,1)";
 

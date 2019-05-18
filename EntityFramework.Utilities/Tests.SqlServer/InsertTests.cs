@@ -131,7 +131,6 @@ namespace Tests
                     BlogPost.Create("T3")
                 };
                 await EFBatchOperation.For(db, db.BlogPosts).InsertAllAsync(list, new SqlServerBulkSettings { Connection = db.Database.GetDbConnection() as SqlConnection });
-                await EFBatchOperation.For(db, db.BlogPosts).InsertAllAsync(list, new SqlServerBulkSettings { Connection = db.Database.GetDbConnection() as SqlConnection });
             }
 
             using (var db = Context.Sql())

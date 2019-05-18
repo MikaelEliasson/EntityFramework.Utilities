@@ -110,36 +110,37 @@ namespace EntityFramework.Utilities.SqlServer
             var set = dbContext.Set<T>();
             var query = set.Where(this.predicate);
 
-            throw new NotImplementedException();
-            //var queryInformation = settings.Analyzer.Analyze(query);
+            var queryInformation = settings.Analyzer.Analyze(query);
 
-            //var delete = settings.SqlGenerator.BuildDeleteQuery(queryInformation);
-            //var parameters = query.Parameters.Select(p => new SqlParameter { Value = p.Value, ParameterName = p.Name }).ToArray<object>();
-            //return await dbContext.Database.ExecuteSqlCommandAsync(delete, parameters);
+            var delete = settings.SqlGenerator.BuildDeleteQuery(queryInformation);
+            var parameters = Enumerable.Empty<SqlParameter>(); // query.Parameters.Select(p => new SqlParameter { Value = p.Value, ParameterName = p.Name }).ToArray<object>();
+            return await dbContext.Database.ExecuteSqlCommandAsync(delete, parameters);
         }
 
         public async Task<int> UpdateAsync<TP>(Expression<Func<T, TP>> prop, Expression<Func<T, TP>> modifier, SqlServerUpdateSettings settings = null)
         {
             settings = settings ?? new SqlServerUpdateSettings();
             var set = dbContext.Set<T>();
-            throw new NotImplementedException();
 
-            //var query = (ObjectQuery<T>)set.Where(predicate);
-            //var queryInformation = settings.Analyzer.Analyze(query);
+            var query = set.Where(predicate);
+            var queryInformation = settings.Analyzer.Analyze(query);
 
-            //var updateExpression = ExpressionHelper.CombineExpressions(prop, modifier);
+            var updateExpression = ExpressionHelper.CombineExpressions(prop, modifier);
 
-            //var mquery = ((ObjectQuery<T>)dbContext.Set<T>().Where(updateExpression));
-            //var mqueryInfo = settings.Analyzer.Analyze(mquery);
+            var mquery = dbContext.Set<T>().Where(updateExpression);
+            var mqueryInfo = settings.Analyzer.Analyze(mquery);
 
-            //var update = settings.SqlGenerator.BuildUpdateQuery(queryInformation, mqueryInfo);
+            var update = settings.SqlGenerator.BuildUpdateQuery(queryInformation, mqueryInfo);
 
             //var parameters = query.Parameters
             //    .Concat(mquery.Parameters)
             //    .Select(p => new SqlParameter { Value = p.Value, ParameterName = p.Name })
             //    .ToArray<object>();
 
-            //return await dbContext.Database.ExecuteSqlCommandAsync(update, parameters);
+            var parameters = Enumerable.Empty<SqlParameter>(); // query.Parameters.Select(p => new SqlParameter { Value = p.Value, ParameterName = p.Name }).ToArray<object>();
+
+
+            return await dbContext.Database.ExecuteSqlCommandAsync(update, parameters);
         }
 
     }

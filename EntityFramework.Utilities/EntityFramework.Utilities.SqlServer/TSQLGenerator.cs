@@ -33,10 +33,11 @@ namespace EntityFramework.Utilities
         public virtual string BuildSelectIntoCommand(string tableName, IList<ColumnMapping> properties, string tempTableName)
         {
             var output = properties.Where(p => p.IsStoreGenerated).Select(x => "INSERTED.[" + x.NameInDatabase + "]");
-            var mergeCommand = string.Format(@"INSERT INTO [{0}]
-                OUTPUT {2}
-                SELECT * FROM 
-                    [{1}]", tableName, tempTableName, string.Join(", ", output));
+            var props = string.Join(",", properties.Where(p => !p.IsStoreGenerated).Select(x => "[" + x.NameInDatabase + "]"));
+            var mergeCommand = $@"INSERT INTO [{tableName}] ({props})
+                OUTPUT {string.Join(", ", output)}
+                SELECT {props} FROM 
+                    [{tempTableName}]";
             return mergeCommand;
         }
 
@@ -45,7 +46,8 @@ namespace EntityFramework.Utilities
 
         public virtual string BuildDeleteQuery(QueryInformation queryInfo)
         {
-            return string.Format("DELETE FROM [{0}].[{1}] {2}", queryInfo.Schema, queryInfo.Table, queryInfo.WhereSql);
+            var schema = !string.IsNullOrWhiteSpace(queryInfo.Schema) ? $"[{queryInfo.Schema}]." : "";
+            return $"DELETE FROM {schema}[{queryInfo.Table}] {queryInfo.WhereSql}";
         }
 
         public virtual string BuildUpdateQuery(QueryInformation predicateQueryInfo, QueryInformation modificationQueryInfo)
@@ -71,8 +73,8 @@ namespace EntityFramework.Utilities
                 updateSql = string.Join(" = ", update.Split(new string[] { " = " }, StringSplitOptions.RemoveEmptyEntries).Reverse());
             }
 
-
-            return string.Format("UPDATE [{0}].[{1}] SET {2} {3}", predicateQueryInfo.Schema, predicateQueryInfo.Table, updateSql, predicateQueryInfo.WhereSql);
+            var schema = !string.IsNullOrWhiteSpace(predicateQueryInfo.Schema) ? $"[{predicateQueryInfo.Schema}]." : "";
+            return string.Format("UPDATE {0}[{1}] SET {2} {3}", schema, predicateQueryInfo.Table, updateSql, predicateQueryInfo.WhereSql);
         }
 
     }
