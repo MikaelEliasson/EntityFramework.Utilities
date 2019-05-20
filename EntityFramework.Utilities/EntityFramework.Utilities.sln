@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.421
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EntityFramework.Utilities", "EntityFramework.Utilities\EntityFramework.Utilities.csproj", "{C3211BAC-13F0-42A7-924C-34BB0EE77914}"
 EndProject
@@ -21,6 +21,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.SqlServer", "Tests.SqlServer\Tests.SqlServer.csproj", "{1C77DA45-38D7-47CB-8DA6-54B7523AEF75}"
 EndProject
 Global
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
@@ -53,5 +56,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{ADF4EAAC-D6E2-40D1-AD8A-40AC05550FF1} = {7012D9CC-1CB8-4DAC-ABE1-491569602245}
 		{1C77DA45-38D7-47CB-8DA6-54B7523AEF75} = {7012D9CC-1CB8-4DAC-ABE1-491569602245}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {629DB8BC-24C7-4D89-8AF9-DB2129BF2833}
 	EndGlobalSection
 EndGlobal

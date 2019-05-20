@@ -13,8 +13,7 @@ namespace EntityFramework.Utilities
 
         public static BulkTableSpec Get<TEntity, T>(DbContext context) where TEntity : class, T
         {
-            var mapping = EfMappingFactory.GetMappingsForContext(context);
-            var typeMapping = mapping.TypeMappings[typeof(T)];
+            var typeMapping = EfMappingFactory.GetMappingForType<T>(context);
             var tableMapping = typeMapping.TableMapping;
 
             var properties = GetProperties(typeof(TEntity), tableMapping);

@@ -174,7 +174,7 @@ namespace EntityFramework.Utilities
                     .Select(p => new PropertyMapping
                     {
                         ColumnName = p.SqlServer().ColumnName,
-                        PropertyName =  string.IsNullOrWhiteSpace(basePath) ? p.Name : basePath + "." + p.Name,
+                        PropertyName = string.IsNullOrWhiteSpace(basePath) ? p.Name : basePath + "." + p.Name,
                         DataType = p.SqlServer().ColumnType,
                         ForEntityType = clrType, // Use to get the right type for the whole tree 
                         IsPrimaryKey = p.IsPrimaryKey(),
@@ -404,5 +404,43 @@ namespace EntityFramework.Utilities
             return mapping;
         }
 
+        public static TypeMapping GetMappingForType<TEntity>(DbContext db)
+        {
+            var t = db.Model.GetEntityTypes().SingleOrDefault(x => x.ClrType == typeof(TEntity)) ?? throw new ArgumentOutOfRangeException($"No entity of type {typeof(TEntity).Name} found");
+            var item = new TypeMapping
+            {
+                EntityType = t.ClrType,
+                TableMapping = new TableMapping
+                {
+                    Schema = t.SqlServer().Schema,
+                    TableName = t.SqlServer().TableName,
+                    PropertyMappings = GetProperties(t, t.ClrType, new string[0])
+                }
+            };
+            return item;
+        }
+
+        private static List<PropertyMapping> GetProperties(IEntityType t, Type clrType, string[] path)
+        {
+            var basePath = string.Join(".", path);
+            var props = t.GetProperties().Where(p => !p.IsShadowProperty)
+                    .Select(p => new PropertyMapping
+                    {
+                        ColumnName = p.SqlServer().ColumnName,
+                        PropertyName = string.IsNullOrWhiteSpace(basePath) ? p.Name : basePath + "." + p.Name,
+                        DataType = p.SqlServer().ColumnType,
+                        ForEntityType = clrType, // Use to get the right type for the whole tree 
+                        IsPrimaryKey = p.IsPrimaryKey(),
+                        IsStoreGenerated = p.SqlServer().ValueGenerationStrategy != null, // Can be null | HiLo | Identity. Only null is not generated
+                        DataTypeFull = p.SqlServer().ColumnType,
+                    }).ToList();
+
+            foreach (var nav in t.GetNavigations().Where(n => n.GetTargetType().IsOwned()))
+            {
+                props.AddRange(GetProperties(nav.GetTargetType(), clrType, path.Concat(new string[] { nav.Name }).ToArray()));
+            }
+
+            return props;
+        }
     }
 }

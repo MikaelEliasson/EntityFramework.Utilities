@@ -34,7 +34,7 @@ namespace Tests.FakeDomain
         {
             //Database.SetInitializer<Context>(null);
 
-            var ctx = new ReorderedContext("Data Source=MACHINEX;Initial Catalog=BatchTests;Integrated Security=SSPI;MultipleActiveResultSets=True");
+            var ctx = new ReorderedContext("Data Source=MACHINEX;Initial Catalog=BatchTests;Integrated Security=SSPI;MultipleActiveResultSets=True;ConnectRetryCount=0");
             ctx.Database.EnsureCreated();
 
             return ctx;

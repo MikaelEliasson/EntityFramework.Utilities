@@ -8,6 +8,7 @@ using EntityFramework.Utilities;
 using Tests;
 using Microsoft.EntityFrameworkCore;
 using EntityFramework.Utilities.SqlServer;
+using Tests.FakeDomain.Models;
 
 namespace PerformanceTests
 {
@@ -15,20 +16,51 @@ namespace PerformanceTests
     {
         static void Main(string[] args)
         {
+            //Metadata(50);
+
+
             BatchIteration(25);
-            //BatchIteration(25);
-            //NormalIteration(25);
-            //NormalIteration(25);
-            //BatchIteration(2500);
-            //NormalIteration(2500);
-            //BatchIteration(25000);
-            //NormalIteration(25000);
-            //BatchIteration(50000);
-            //NormalIteration(50000);
+            BatchIteration(25);
+            NormalIteration(25);
+            NormalIteration(25);
+            BatchIteration(2500);
+            NormalIteration(2500);
+            BatchIteration(25000);
+            NormalIteration(25000);
+            BatchIteration(50000);
+            NormalIteration(50000);
             BatchIteration(100000);
-            //NormalIteration(100000);
+            NormalIteration(100000);
         }
 
+        private static void Metadata(int count)
+        {
+            Console.WriteLine("Metadata");
+            var stop = new Stopwatch();
+
+            foreach (var item in Enumerable.Repeat(0, count))
+            {
+                using (var db = new Context())
+                {
+                    stop.Restart();
+                    var mappings = EfMappingFactory.GetMappingForType<Comment>(db);
+                    stop.Stop();
+                    Console.WriteLine("Read meta for comment: " + stop.Elapsed + "ms");
+                }
+            }
+
+            foreach (var item in Enumerable.Repeat(0, count))
+            {
+                using (var db = new Context())
+                {
+                    stop.Restart();
+                    var mappings = EfMappingFactory.GetMappingForType<Publication>(db);
+                    stop.Stop();
+                    Console.WriteLine("Read meta for publication: " + stop.Elapsed + "ms");
+                }
+            }
+
+        }
 
         private static void NormalIteration(int count)
         {
@@ -202,7 +234,7 @@ namespace PerformanceTests
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Data Source=./; Initial Catalog=EFUTest; Integrated Security=SSPI; MultipleActiveResultSets=True");
+            optionsBuilder.UseSqlServer("Data Source=MACHINEX; Initial Catalog=EFUTest; Integrated Security=SSPI; MultipleActiveResultSets=True;ConnectRetryCount=0");
             base.OnConfiguring(optionsBuilder);
         }
 
