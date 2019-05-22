@@ -2,6 +2,15 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Version>2.0.0-beta1</Version>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/MikaelEliasson/EntityFramework.Utilities/master/EntityFramework.Utilities/LICENSE.txt</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/MikaelEliasson/EntityFramework.Utilities</PackageProjectUrl>
+    <Company />
+    <Authors>Mikael Eliasson</Authors>
+    <PackageId>ME.EntityFramework.Utilities.SqlServer</PackageId>
+    <Product>ME.EntityFramework.Utilities.SqlServer</Product>
   </PropertyGroup>
 
   <ItemGroup>
