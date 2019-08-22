@@ -54,7 +54,7 @@ namespace EntityFramework.Utilities
 
     public interface IEFBatchOperationFiltered<TContext, T>
     {
-        int Delete();
+        int Delete(DbConnection connection = null);
         int Update<TP>(Expression<Func<T, TP>> prop, Expression<Func<T, TP>> modifier);
     }
     public static class EFBatchOperation
@@ -181,16 +181,17 @@ namespace EntityFramework.Utilities
             return this;
         }
 
-        public int Delete()
+        public int Delete(DbConnection connection = null)
         {
             var con = context.Connection as EntityConnection;
-            if (con == null)
+            if (con == null && connection == null)
             {
                 Configuration.Log("No provider could be found because the Connection didn't implement System.Data.EntityClient.EntityConnection");
                 return Fallbacks.DefaultDelete(context, this.predicate);
             }
+            var connectionToUse = connection ?? con.StoreConnection;
 
-            var provider = Configuration.Providers.FirstOrDefault(p => p.CanHandle(con.StoreConnection));
+            var provider = Configuration.Providers.FirstOrDefault(p => p.CanHandle(connectionToUse));
             if (provider != null && provider.CanDelete)
             {
                 var set = context.CreateObjectSet<T>();
@@ -203,7 +204,7 @@ namespace EntityFramework.Utilities
             }
             else
             {
-                Configuration.Log("Found provider: " + (provider == null ? "[]" : provider.GetType().Name ) + " for " + con.StoreConnection.GetType().Name);
+                Configuration.Log("Found provider: " + (provider == null ? "[]" : provider.GetType().Name) + " for " + connectionToUse.GetType().Name);
                 return Fallbacks.DefaultDelete(context, this.predicate);
             }
         }
