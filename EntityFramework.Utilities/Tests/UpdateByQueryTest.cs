@@ -244,6 +244,25 @@ namespace Tests
             Assert.IsNotNull(fallbackText);
         }
 
+        [TestMethod]
+        public void UpdateAll_Increment_WithExplicitConnection()
+        {
+            SetupBasePosts();
+
+            int count;
+            using (var db = Context.Sql())
+            {
+                count = EFBatchOperation.For(db, db.BlogPosts).Where(b => b.Title == "T2").Update(b => b.Reads, b => b.Reads + 5, db.Database.Connection);
+                Assert.AreEqual(1, count);
+            }
+
+            using (var db = Context.Sql())
+            {
+                var post = db.BlogPosts.First(p => p.Title == "T2");
+                Assert.AreEqual(5, post.Reads);
+            }
+        }
+
         private static void SetupBasePosts()
         {
             using (var db = Context.Sql())
