@@ -178,7 +178,7 @@ namespace EntityFramework.Utilities
                         DataType = p.GetColumnType(),
                         ForEntityType = clrType, // Use to get the right type for the whole tree 
                         IsPrimaryKey = p.IsPrimaryKey(),
-                        IsStoreGenerated = p.GetValueGenerationStrategy() != null, // Can be null | HiLo | Identity. Only null is not generated // TODO: It can NOT be null anymore; update with proper logic
+                        IsStoreGenerated = p.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.None,
                         DataTypeFull = p.GetColumnType(),
                     }).ToList();
 
@@ -431,7 +431,7 @@ namespace EntityFramework.Utilities
                         DataType = p.GetColumnType(),
                         ForEntityType = clrType, // Use to get the right type for the whole tree 
                         IsPrimaryKey = p.IsPrimaryKey(),
-                        IsStoreGenerated = p.GetValueGenerationStrategy() != null, // Can be null | HiLo | Identity. Only null is not generated // TODO: It can NOT be null anymore; update with proper logic
+                        IsStoreGenerated = p.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.None,
                         DataTypeFull = p.GetColumnType(),
                     }).ToList();
 
