@@ -168,11 +168,11 @@ namespace PerformanceTests
                 Console.WriteLine(comments.Last().Id);
                 Console.WriteLine("Insert entities (id return): " + stop.ElapsedMilliseconds + "ms");
 
-
-                stop.Restart();
-                var c1 = EFBatchOperation.For(db, db.Comments).Where(x => x.Text == "a").UpdateAsync(x => x.Reads, x => x.Reads + 1).Result;
-                stop.Stop();
-                Console.WriteLine("Update all entities with a: " + stop.ElapsedMilliseconds + "ms");
+                //// TODO: Full EF Core 3 support
+                //stop.Restart();
+                //var c1 = EFBatchOperation.For(db, db.Comments).Where(x => x.Text == "a").UpdateAsync(x => x.Reads, x => x.Reads + 1).Result;
+                //stop.Stop();
+                //Console.WriteLine("Update all entities with a: " + stop.ElapsedMilliseconds + "ms");
 
                 var commentsFromDb = db.Comments.AsNoTracking().ToList();
                 var rand = new Random();
@@ -185,15 +185,17 @@ namespace PerformanceTests
                 stop.Stop();
                 Console.WriteLine("Bulk update all with a random read: " + stop.ElapsedMilliseconds + "ms");
 
-                stop.Restart();
-                var c2 = EFBatchOperation.For(db, db.Comments).Where(x => x.Text == "a").DeleteAsync().Result;
-                stop.Stop();
-                Console.WriteLine("delete all entities with a: " + stop.ElapsedMilliseconds + "ms");
-
-                stop.Restart();
-                var c3 = EFBatchOperation.For(db, db.Comments).Where(x => true).DeleteAsync().Result;
-                stop.Stop();
-                Console.WriteLine("delete all entities: " + stop.ElapsedMilliseconds + "ms");
+                //// TODO: Full EF Core 3 support
+                //stop.Restart();
+                //var c2 = EFBatchOperation.For(db, db.Comments).Where(x => x.Text == "a").DeleteAsync().Result;
+                //stop.Stop();
+                //Console.WriteLine("delete all entities with a: " + stop.ElapsedMilliseconds + "ms");
+                
+                //// TODO: Full EF Core 3 support
+                //stop.Restart();
+                //var c3 = EFBatchOperation.For(db, db.Comments).Where(x => true).DeleteAsync().Result;
+                //stop.Stop();
+                //Console.WriteLine("delete all entities: " + stop.ElapsedMilliseconds + "ms");
 
             }
         }

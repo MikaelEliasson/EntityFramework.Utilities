@@ -32,28 +32,7 @@ namespace EntityFramework.Utilities.SqlServer
             return queryInfo;
         }
 
-        //private static readonly TypeInfo QueryCompilerTypeInfo = typeof(QueryCompiler).GetTypeInfo();
-
-        //private static readonly FieldInfo QueryCompilerField = typeof(EntityQueryProvider).GetTypeInfo().DeclaredFields.First(x => x.Name == "_queryCompiler");
-        //private static readonly FieldInfo QueryModelGeneratorField = typeof(QueryCompiler).GetTypeInfo().DeclaredFields.First(x => x.Name == "_queryModelGenerator");
-        //private static readonly FieldInfo DataBaseField = QueryCompilerTypeInfo.DeclaredFields.Single(x => x.Name == "_database");
-        //private static readonly PropertyInfo DatabaseDependenciesField = typeof(Database).GetTypeInfo().DeclaredProperties.Single(x => x.Name == "Dependencies");
-
-        //public static string ToSqlOld<TEntity>(IQueryable<TEntity> query)
-        //{
-        //    var queryCompiler = (QueryCompiler)QueryCompilerField.GetValue(query.Provider);
-        //    var queryModelGenerator = (QueryModelGenerator)QueryModelGeneratorField.GetValue(queryCompiler);
-        //    var queryModel = queryModelGenerator.ParseQuery(query.Expression);
-        //    var database = DataBaseField.GetValue(queryCompiler);
-        //    var databaseDependencies = (DatabaseDependencies)DatabaseDependenciesField.GetValue(database);
-        //    var queryCompilationContext = databaseDependencies.QueryCompilationContextFactory.Create(false);
-        //    var modelVisitor = (RelationalQueryModelVisitor)queryCompilationContext.CreateQueryModelVisitor();
-        //    modelVisitor.CreateQueryExecutor<TEntity>(queryModel);
-        //    var sql = modelVisitor.Queries.First().ToString();
-
-        //    return sql;
-        //}
-
+        // From https://stackoverflow.com/a/51583047 which also hints that there's a better solution coming in next major version (https://github.com/aspnet/EntityFrameworkCore/issues/6482)
         public static string ToSql<TEntity>(IQueryable<TEntity> query) where TEntity : class
         {
             var enumerator = query.Provider.Execute<IEnumerable<TEntity>>(query.Expression).GetEnumerator();

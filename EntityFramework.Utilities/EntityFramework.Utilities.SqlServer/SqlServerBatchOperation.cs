@@ -29,8 +29,9 @@ namespace EntityFramework.Utilities.SqlServer
 
     public interface ISqlServerBatchOperationFiltered<TContext, T>
     {
-        Task<int> DeleteAsync(SqlServerDeleteSettings settings = null);
-        Task<int> UpdateAsync<TP>(Expression<Func<T, TP>> prop, Expression<Func<T, TP>> modifier, SqlServerUpdateSettings settings = null);
+        // // TODO: Full EF Core 3 support
+        //Task<int> DeleteAsync(SqlServerDeleteSettings settings = null);
+        //Task<int> UpdateAsync<TP>(Expression<Func<T, TP>> prop, Expression<Func<T, TP>> modifier, SqlServerUpdateSettings settings = null);
     }
 
     public class SqlServerBatchOperation<TContext, T> : ISqlServerBatchOperationBase<TContext, T>, ISqlServerBatchOperationFiltered<TContext, T>
