@@ -7,7 +7,7 @@ using Tests.FakeDomain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.SqlServer;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 
 namespace Tests.SqlServer.Advanced
