@@ -23,7 +23,8 @@ namespace EntityFramework.Utilities.SqlServer
         /// </summary>
         /// <typeparam name="TEntity"></typeparam>
         /// <param name="items">The items to update</param>
-        Task UpdateAllAsync<TEntity>(IEnumerable<TEntity> items, Action<UpdateSpecification<TEntity>> updateSpecification, SqlServerBulkSettings settings = null) where TEntity : class, T;
+        // // TODO: Full EF Core 3 support
+        //Task UpdateAllAsync<TEntity>(IEnumerable<TEntity> items, Action<UpdateSpecification<TEntity>> updateSpecification, SqlServerBulkSettings settings = null) where TEntity : class, T;
 
     }
 
@@ -82,7 +83,7 @@ namespace EntityFramework.Utilities.SqlServer
             await settings.Factory.Inserter().InsertItemsAsync(items, tableSpec, settings);
         }
 
-
+        [Obsolete("Not yet verified to be safe for EF Core 3 (some cases are definitely unsupported)", error: true)]
         public async Task UpdateAllAsync<TEntity>(IEnumerable<TEntity> items, Action<UpdateSpecification<TEntity>> updateSpecification, SqlServerBulkSettings settings = null) where TEntity : class, T
         {
 
@@ -105,6 +106,7 @@ namespace EntityFramework.Utilities.SqlServer
             return this;
         }
 
+        [Obsolete("Not yet verified to be safe for EF Core 3 (some cases are definitely unsupported)", error: true)]
         public async Task<int> DeleteAsync(SqlServerDeleteSettings settings = null)
         {
             settings = settings ?? new SqlServerDeleteSettings();
@@ -118,6 +120,7 @@ namespace EntityFramework.Utilities.SqlServer
             return await dbContext.Database.ExecuteSqlCommandAsync(delete, parameters);
         }
 
+        [Obsolete("Not yet verified to be safe for EF Core 3 (some cases are definitely unsupported)", error: true)]
         public async Task<int> UpdateAsync<TP>(Expression<Func<T, TP>> prop, Expression<Func<T, TP>> modifier, SqlServerUpdateSettings settings = null)
         {
             settings = settings ?? new SqlServerUpdateSettings();
@@ -143,6 +146,5 @@ namespace EntityFramework.Utilities.SqlServer
 
             return await dbContext.Database.ExecuteSqlCommandAsync(update, parameters);
         }
-
     }
 }

@@ -174,23 +174,24 @@ namespace PerformanceTests
                 //stop.Stop();
                 //Console.WriteLine("Update all entities with a: " + stop.ElapsedMilliseconds + "ms");
 
-                var commentsFromDb = db.Comments.AsNoTracking().ToList();
-                var rand = new Random();
-                foreach (var item in commentsFromDb)
-                {
-                    item.Reads = rand.Next(0, 9999999);
-                }
-                stop.Restart();
-                EFBatchOperation.For(db, db.Comments).UpdateAllAsync(commentsFromDb, x => x.ColumnsToUpdate(c => c.Reads)).Wait();
-                stop.Stop();
-                Console.WriteLine("Bulk update all with a random read: " + stop.ElapsedMilliseconds + "ms");
+                //// TODO: Full EF Core 3 support
+                //var commentsFromDb = db.Comments.AsNoTracking().ToList();
+                //var rand = new Random();
+                //foreach (var item in commentsFromDb)
+                //{
+                //    item.Reads = rand.Next(0, 9999999);
+                //}
+                //stop.Restart();
+                //EFBatchOperation.For(db, db.Comments).UpdateAllAsync(commentsFromDb, x => x.ColumnsToUpdate(c => c.Reads)).Wait();
+                //stop.Stop();
+                //Console.WriteLine("Bulk update all with a random read: " + stop.ElapsedMilliseconds + "ms");
 
                 //// TODO: Full EF Core 3 support
                 //stop.Restart();
                 //var c2 = EFBatchOperation.For(db, db.Comments).Where(x => x.Text == "a").DeleteAsync().Result;
                 //stop.Stop();
                 //Console.WriteLine("delete all entities with a: " + stop.ElapsedMilliseconds + "ms");
-                
+
                 //// TODO: Full EF Core 3 support
                 //stop.Restart();
                 //var c3 = EFBatchOperation.For(db, db.Comments).Where(x => true).DeleteAsync().Result;
