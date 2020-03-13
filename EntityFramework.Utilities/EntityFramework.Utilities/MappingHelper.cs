@@ -156,8 +156,8 @@ namespace EntityFramework.Utilities
                     EntityType = t.ClrType,
                     TableMapping = new TableMapping
                     {
-                        Schema = t.SqlServer().Schema,
-                        TableName = t.SqlServer().TableName,
+                        Schema = t.GetSchema(),
+                        TableName = t.GetTableName(),
                         PropertyMappings = GetProperties(t, t.ClrType, new string[0])
                     }
                 };
@@ -170,16 +170,16 @@ namespace EntityFramework.Utilities
         private static List<PropertyMapping> GetProperties(IEntityType t, Type clrType, string[] path)
         {
             var basePath = string.Join(".", path);
-            var props = t.GetProperties().Where(p => !p.IsShadowProperty)
+            var props = t.GetProperties().Where(p => !p.IsShadowProperty())
                     .Select(p => new PropertyMapping
                     {
-                        ColumnName = p.SqlServer().ColumnName,
+                        ColumnName = p.GetColumnName(),
                         PropertyName = string.IsNullOrWhiteSpace(basePath) ? p.Name : basePath + "." + p.Name,
-                        DataType = p.SqlServer().ColumnType,
+                        DataType = p.GetColumnType(),
                         ForEntityType = clrType, // Use to get the right type for the whole tree 
                         IsPrimaryKey = p.IsPrimaryKey(),
-                        IsStoreGenerated = p.SqlServer().ValueGenerationStrategy != null, // Can be null | HiLo | Identity. Only null is not generated
-                        DataTypeFull = p.SqlServer().ColumnType,
+                        IsStoreGenerated = p.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.None,
+                        DataTypeFull = p.GetColumnType(),
                     }).ToList();
 
             foreach (var nav in t.GetNavigations().Where(n => n.GetTargetType().IsOwned()))
@@ -412,8 +412,8 @@ namespace EntityFramework.Utilities
                 EntityType = t.ClrType,
                 TableMapping = new TableMapping
                 {
-                    Schema = t.SqlServer().Schema,
-                    TableName = t.SqlServer().TableName,
+                    Schema = t.GetSchema(),
+                    TableName = t.GetTableName(),
                     PropertyMappings = GetProperties(t, t.ClrType, new string[0])
                 }
             };
@@ -423,16 +423,16 @@ namespace EntityFramework.Utilities
         private static List<PropertyMapping> GetProperties(IEntityType t, Type clrType, string[] path)
         {
             var basePath = string.Join(".", path);
-            var props = t.GetProperties().Where(p => !p.IsShadowProperty)
+            var props = t.GetProperties().Where(p => !p.IsShadowProperty())
                     .Select(p => new PropertyMapping
                     {
-                        ColumnName = p.SqlServer().ColumnName,
+                        ColumnName = p.GetColumnName(),
                         PropertyName = string.IsNullOrWhiteSpace(basePath) ? p.Name : basePath + "." + p.Name,
-                        DataType = p.SqlServer().ColumnType,
+                        DataType = p.GetColumnType(),
                         ForEntityType = clrType, // Use to get the right type for the whole tree 
                         IsPrimaryKey = p.IsPrimaryKey(),
-                        IsStoreGenerated = p.SqlServer().ValueGenerationStrategy != null, // Can be null | HiLo | Identity. Only null is not generated
-                        DataTypeFull = p.SqlServer().ColumnType,
+                        IsStoreGenerated = p.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.None,
+                        DataTypeFull = p.GetColumnType(),
                     }).ToList();
 
             foreach (var nav in t.GetNavigations().Where(n => n.GetTargetType().IsOwned()))

@@ -1,4 +1,4 @@
 ﻿{
 	"SqlServer" : "Data Source=./; Initial Catalog=BatchTests; Integrated Security=SSPI; MultipleActiveResultSets=True",
-	"SqlCe" : "Data Source=BatchTests.sdf"
+	"SqlCe": "Data Source=BatchTests.sdf"
 }
