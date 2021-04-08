@@ -231,6 +231,11 @@ namespace EntityFramework.Utilities
             {
                 return string.Format("{0}({1})", scalar.Column.TypeName, scalar.Column.MaxLength);
             }
+            
+            if (scalar.Column.TypeName == "nchar" || scalar.Column.TypeName == "char")
+            {
+                return string.Format("{0}({1})", scalar.Column.TypeName, scalar.Column.MaxLength);
+            }
 
             if (scalar.Column.TypeName == "decimal" || scalar.Column.TypeName == "numeric")
             {
