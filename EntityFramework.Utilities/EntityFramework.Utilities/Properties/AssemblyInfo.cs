@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("EntityFramework.Utilities")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Fork of https://github.com/MikaelEliasson/EntityFramework.Utilities")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("EntityFramework.Utilities")]
