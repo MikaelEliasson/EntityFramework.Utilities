@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Newtonsoft.Json;
 using System.IO;
-using System.Linq;
-using System.Text;
-using ServiceStack.Text;
 
 namespace Tests
 {
@@ -15,10 +11,9 @@ namespace Tests
         {
             get
             {
-                if(connectionsStrings == null){
-                    using(var stream = File.OpenRead("connectionStrings.json")){
-                        connectionsStrings = JsonSerializer.DeserializeFromStream<ConnectionStrings>(stream);
-                    }
+                if (connectionsStrings == null)
+                {
+                    connectionsStrings = JsonConvert.DeserializeObject<ConnectionStrings>(File.ReadAllText("connectionStrings.json"));
                 }
                 return connectionsStrings;
             }

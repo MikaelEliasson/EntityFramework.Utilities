@@ -25,7 +25,7 @@ namespace Tests.SqlServer.Advanced
                 var tableSpec = BulkTableSpec.Get<BlogPost, BlogPost>(db);
 
                 var sql = new TableCreator().BuildCreateTableCommand(tableSpec.TableMapping.Schema, "tempTable111", tableSpec.Properties);
-                db.Database.ExecuteSqlCommand(sql);
+                db.Database.ExecuteSqlRaw(sql);
 
                 var oldColumns = GetColumns(db, tableSpec.TableMapping.TableName);
                 var newColumns = GetColumns(db, "tempTable111");
@@ -45,7 +45,7 @@ namespace Tests.SqlServer.Advanced
 
                 var tableSpec = BulkTableSpec.Get<Contact, Person>(db);
                 var sql = new TableCreator().BuildCreateTableCommand(tableSpec.TableMapping.Schema, "tempTable222", tableSpec.Properties);
-                db.Database.ExecuteSqlCommand(sql);
+                db.Database.ExecuteSqlRaw(sql);
 
                 var oldColumns = GetColumns(db, tableSpec.TableMapping.TableName);
                 var newColumns = GetColumns(db, "tempTable222");

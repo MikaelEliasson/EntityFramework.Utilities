@@ -117,7 +117,7 @@ namespace EntityFramework.Utilities.SqlServer
 
             var delete = settings.SqlGenerator.BuildDeleteQuery(queryInformation);
             var parameters = Enumerable.Empty<SqlParameter>(); // query.Parameters.Select(p => new SqlParameter { Value = p.Value, ParameterName = p.Name }).ToArray<object>();
-            return await dbContext.Database.ExecuteSqlCommandAsync(delete, parameters);
+            return await dbContext.Database.ExecuteSqlRawAsync(delete, parameters);
         }
 
         [Obsolete("Not yet verified to be safe for EF Core 3 (some cases are definitely unsupported)", error: true)]
@@ -144,7 +144,7 @@ namespace EntityFramework.Utilities.SqlServer
             var parameters = Enumerable.Empty<SqlParameter>(); // query.Parameters.Select(p => new SqlParameter { Value = p.Value, ParameterName = p.Name }).ToArray<object>();
 
 
-            return await dbContext.Database.ExecuteSqlCommandAsync(update, parameters);
+            return await dbContext.Database.ExecuteSqlRawAsync(update, parameters);
         }
     }
 }

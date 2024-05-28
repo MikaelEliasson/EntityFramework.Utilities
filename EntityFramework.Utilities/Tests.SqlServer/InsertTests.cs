@@ -171,8 +171,8 @@ namespace Tests
             using (var db = RenamedAndReorderedContext.Sql())
             {
                 db.SetupDb();
-                db.Database.ExecuteSqlCommand("drop table dbo.RenamedAndReorderedBlogPosts;");
-                db.Database.ExecuteSqlCommand(RenamedAndReorderedBlogPost.CreateTableSql());
+                db.Database.ExecuteSqlRaw("drop table dbo.RenamedAndReorderedBlogPosts;");
+                db.Database.ExecuteSqlRaw(RenamedAndReorderedBlogPost.CreateTableSql());
             }
 
             using (var db = RenamedAndReorderedContext.Sql())

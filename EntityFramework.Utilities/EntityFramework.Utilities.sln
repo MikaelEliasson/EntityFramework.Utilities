@@ -1,11 +1,11 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.421
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{3B0BC291-8087-4F0F-BA20-2CFB4719BE2B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{3B0BC291-8087-4F0F-BA20-2CFB4719BE2B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PerformanceTests", "PerformanceTests\PerformanceTests.csproj", "{B888C7A8-D29C-4ED2-B408-C74E36808E9E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PerformanceTests", "PerformanceTests\PerformanceTests.csproj", "{B888C7A8-D29C-4ED2-B408-C74E36808E9E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{86B2DC00-4043-4C06-8795-93BD6999B6C9}"
 	ProjectSection(SolutionItems) = preProject
@@ -14,7 +14,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SqlServer", "SqlServer", "{7012D9CC-1CB8-4DAC-ABE1-491569602245}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.SqlServer", "Tests.SqlServer\Tests.SqlServer.csproj", "{1C77DA45-38D7-47CB-8DA6-54B7523AEF75}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.SqlServer", "Tests.SqlServer\Tests.SqlServer.csproj", "{1C77DA45-38D7-47CB-8DA6-54B7523AEF75}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EntityFramework.Utilities", "EntityFramework.Utilities\EntityFramework.Utilities.csproj", "{06BFE140-5120-454E-92DE-E5BF1B35AD8A}"
 EndProject

@@ -32,7 +32,7 @@ namespace Tests.SqlServer.Advanced
                 creator.IgnoreIdentity = false;
                 creator.IgnoreIdentityColumns = false;
                 var sql = creator.BuildCreateTableCommand(tableSpec.TableMapping.Schema, "dummy", tableSpec.Properties);
-                db.Database.ExecuteSqlCommand(sql);
+                db.Database.ExecuteSqlRaw(sql);
 
                 var s = new SqlServerBulkSettings();
                 s.Factory.Inserter = () => new TempTableInserter("dummy");

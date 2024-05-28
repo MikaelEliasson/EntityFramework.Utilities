@@ -1,20 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>EntityFramework.Utilities</RootNamespace>
-    <Version>2.0.0-beta1</Version>
+    <Version>5.0.0-beta1</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageProjectUrl>https://github.com/MikaelEliasson/EntityFramework.Utilities</PackageProjectUrl>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/MikaelEliasson/EntityFramework.Utilities/master/EntityFramework.Utilities/LICENSE.txt</PackageLicenseUrl>
+	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Authors>Mikael Eliasson</Authors>
     <PackageId>ME.EntityFramework.Utilities</PackageId>
     <Product>ME.EntityFramework.Utilities</Product>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="5.0.17" />
   </ItemGroup>
 
 </Project>
