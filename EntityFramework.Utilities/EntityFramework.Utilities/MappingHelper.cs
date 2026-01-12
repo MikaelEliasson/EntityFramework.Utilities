@@ -167,24 +167,25 @@ namespace EntityFramework.Utilities
             TypeMappings = model.ToDictionary(x => x.EntityType, x => x);
         }
 
-        private static List<PropertyMapping> GetProperties(IEntityType t, Type clrType, string[] path)
+        private static List<PropertyMapping> GetProperties(IEntityType t, Type clrType, string[] path, StoreObjectIdentifier? storeObject = null)
         {
             var basePath = string.Join(".", path);
+            var tableIdentifier = storeObject ?? StoreObjectIdentifier.Create(t, StoreObjectType.Table)!.Value;
             var props = t.GetProperties().Where(p => !p.IsShadowProperty())
                     .Select(p => new PropertyMapping
                     {
-                        ColumnName = p.GetColumnName(),
+                        ColumnName = p.GetColumnName(tableIdentifier),
                         PropertyName = string.IsNullOrWhiteSpace(basePath) ? p.Name : basePath + "." + p.Name,
-                        DataType = p.GetColumnType(),
+                        DataType = p.GetColumnType(tableIdentifier),
                         ForEntityType = clrType, // Use to get the right type for the whole tree 
                         IsPrimaryKey = p.IsPrimaryKey(),
-                        IsStoreGenerated = p.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.None,
-                        DataTypeFull = p.GetColumnType(),
+                        IsStoreGenerated = p.GetValueGenerationStrategy(tableIdentifier) != SqlServerValueGenerationStrategy.None,
+                        DataTypeFull = p.GetColumnType(tableIdentifier),
                     }).ToList();
 
-            foreach (var nav in t.GetNavigations().Where(n => n.GetTargetType().IsOwned()))
+            foreach (var nav in t.GetNavigations().Where(n => n.TargetEntityType.IsOwned()))
             {
-                props.AddRange(GetProperties(nav.GetTargetType(), clrType, path.Concat(new string[] { nav.Name }).ToArray()));
+                props.AddRange(GetProperties(nav.TargetEntityType, clrType, path.Concat(new string[] { nav.Name }).ToArray(), tableIdentifier));
             }
 
             return props;
@@ -420,24 +421,25 @@ namespace EntityFramework.Utilities
             return item;
         }
 
-        private static List<PropertyMapping> GetProperties(IEntityType t, Type clrType, string[] path)
+        private static List<PropertyMapping> GetProperties(IEntityType t, Type clrType, string[] path, StoreObjectIdentifier? storeObject = null)
         {
             var basePath = string.Join(".", path);
+            var tableIdentifier = storeObject ?? StoreObjectIdentifier.Create(t, StoreObjectType.Table)!.Value;
             var props = t.GetProperties().Where(p => !p.IsShadowProperty())
                     .Select(p => new PropertyMapping
                     {
-                        ColumnName = p.GetColumnName(),
+                        ColumnName = p.GetColumnName(tableIdentifier),
                         PropertyName = string.IsNullOrWhiteSpace(basePath) ? p.Name : basePath + "." + p.Name,
-                        DataType = p.GetColumnType(),
+                        DataType = p.GetColumnType(tableIdentifier),
                         ForEntityType = clrType, // Use to get the right type for the whole tree 
                         IsPrimaryKey = p.IsPrimaryKey(),
-                        IsStoreGenerated = p.GetValueGenerationStrategy() != SqlServerValueGenerationStrategy.None,
-                        DataTypeFull = p.GetColumnType(),
+                        IsStoreGenerated = p.GetValueGenerationStrategy(tableIdentifier) != SqlServerValueGenerationStrategy.None,
+                        DataTypeFull = p.GetColumnType(tableIdentifier),
                     }).ToList();
 
-            foreach (var nav in t.GetNavigations().Where(n => n.GetTargetType().IsOwned()))
+            foreach (var nav in t.GetNavigations().Where(n => n.TargetEntityType.IsOwned()))
             {
-                props.AddRange(GetProperties(nav.GetTargetType(), clrType, path.Concat(new string[] { nav.Name }).ToArray()));
+                props.AddRange(GetProperties(nav.TargetEntityType, clrType, path.Concat(new string[] { nav.Name }).ToArray(), tableIdentifier));
             }
 
             return props;

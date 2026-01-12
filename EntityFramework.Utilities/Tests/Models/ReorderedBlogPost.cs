@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 
@@ -12,6 +13,7 @@ namespace Tests.FakeDomain.Models
         public DateTime Created { get; set; }
         public string Title { get; set; } //<--- Reversed order of this and created for Batch Insert testing
         public int Reads { get; set; }
+        [Required]
         public AuthorInfo Author { get; set; }
 
     }

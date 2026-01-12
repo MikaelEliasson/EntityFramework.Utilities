@@ -237,7 +237,7 @@ namespace PerformanceTests
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Data Source=MACHINEX; Initial Catalog=EFUTest; Integrated Security=SSPI; MultipleActiveResultSets=True;ConnectRetryCount=0");
+            optionsBuilder.UseSqlServer("Data Source=.//; Initial Catalog=EFUTest; MultipleActiveResultSets=True;ConnectRetryCount=0");
             base.OnConfiguring(optionsBuilder);
         }
 

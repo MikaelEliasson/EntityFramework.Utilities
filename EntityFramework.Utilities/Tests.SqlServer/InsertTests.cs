@@ -34,7 +34,7 @@ namespace Tests
             using (var db = Context.Sql())
             {
                 var contacts = db.People.OfType<Contact>().OrderBy(c => c.FirstName).ToList();
-                Assert.AreEqual(3, contacts.Count);
+                Assert.HasCount(3, contacts);
                 Assert.AreEqual("FN1", contacts.First().FirstName);
                 Assert.AreEqual("Director", contacts.First().Title);
             }
@@ -59,7 +59,7 @@ namespace Tests
             using (var db = Context.Sql())
             {
                 var contacts = db.People.OrderBy(c => c.FirstName).ToList();
-                Assert.AreEqual(3, contacts.Count);
+                Assert.HasCount(3, contacts);
                 Assert.AreEqual("FN1", contacts.First().FirstName);
             }
         }
